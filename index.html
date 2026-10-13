@@ -1000,7 +1000,7 @@
     </dialog>
     <script>
       /* ====== CONFIGURATION FIREBASE : remplacez les valeurs « REMPLACER… » par celles de votre application Web
-         (Console Firebase > Paramètres du projet > Vos applications > Configuration du SDK) ====== */
+   (Console Firebase > Paramètres du projet > Vos applications > Configuration du SDK) ====== */
       window.FIREBASE_CONFIG = {
         apiKey: "AIzaSyAnRBaNy3HL-E-ZLMeyj74vsWnpeT_3qWk",
 
@@ -6590,7 +6590,9 @@
           } catch (e) {
             console.error(e);
             setSync(
-              "⚠ Échec de synchronisation — nouvel essai dans 15 s",
+              "⚠ Échec de synchronisation (" +
+                (e.code || e.message) +
+                ") — nouvel essai dans 15 s",
               true,
             );
             clearTimeout(pushTimer);
@@ -6606,6 +6608,12 @@
           try {
             dirty = !!localStorage.getItem(dirtyKey());
           } catch (_) {}
+          if (dirty && !cards.length && !folders.length) {
+            dirty = false;
+            try {
+              localStorage.removeItem(dirtyKey());
+            } catch (_) {}
+          }
           if (dirty) {
             cloudSnap = new Map();
             cloudMetaSnap = "";
@@ -6689,7 +6697,14 @@
             meta.nextId || 1,
             ...cards.map((c) => (Number(c.id) || 0) + 1),
           );
-          folders = Array.isArray(meta.folders) ? meta.folders : [];
+          folders = Array.isArray(meta.folders) ? meta.folders.slice() : [];
+          cards.forEach((c) => {
+            const parts = (c.folder || "").split("/").filter(Boolean);
+            for (let i = 1; i <= parts.length; i++) {
+              const f = parts.slice(0, i).join("/");
+              if (!folders.includes(f)) folders.push(f);
+            }
+          });
           customColors = Array.isArray(meta.customColors)
             ? meta.customColors
             : [];
@@ -6743,15 +6758,19 @@
         async function onAuth(u) {
           await initP;
           const prevNs = ns;
-          if (!u && prevNs) {
-            try {
-              await kv("readwrite", (s) => s.clear(), prevNs);
-            } catch (_) {}
-          } // déconnexion : on vide le cache de ce compte
           user = u || null;
           cloudReady = false;
           clearTimeout(pushTimer);
-          prepMemo.clear();
+          prepMemo.clear(); // d'abord : plus aucune synchro possible
+          if (!u && prevNs) {
+            // déconnexion : on vide le cache de ce compte (sans le signaler comme « modification »)
+            try {
+              await kv("readwrite", (s) => s.clear(), prevNs);
+            } catch (_) {}
+            try {
+              localStorage.removeItem("pnj_dirty_" + prevNs.slice(1));
+            } catch (_) {}
+          }
           cloudSnap = new Map();
           cloudMetaSnap = "";
           cloudImgs = new Set();
@@ -6765,7 +6784,9 @@
             } catch (e) {
               console.error(e);
               setSync(
-                "⚠ Cloud injoignable : données locales affichées (bouton ↻ pour réessayer)",
+                "⚠ Cloud injoignable (" +
+                  (e.code || e.message) +
+                  ") : données locales affichées, bouton ↻ pour réessayer",
                 true,
               );
             }
@@ -6863,9 +6884,9 @@
             dirty = !!localStorage.getItem(dirtyKey());
           } catch (_) {}
           if (
-            dirty &&
+            (dirty || !cloudReady) &&
             !confirm(
-              "Des modifications ne sont pas encore synchronisées et seront perdues. Se déconnecter quand même ?",
+              "Votre bibliothèque n’est pas (ou pas entièrement) synchronisée avec le cloud : les données locales seront perdues. Se déconnecter quand même ?",
             )
           )
             return;
