@@ -380,6 +380,88 @@
         padding: 3px 6px;
         font-size: 11px;
       }
+      .folder-chip.folder-up {
+        border-style: dashed;
+        color: var(--ui);
+      }
+      .folder-chip.sub-hidden .folder-label {
+        opacity: 0.45;
+        text-decoration: line-through;
+      }
+      .folder-chip .folder-eye {
+        flex: 0 0 auto;
+        width: 26px;
+        height: 26px;
+        padding: 0;
+        font-size: 14px;
+        line-height: 1;
+      }
+      .view-toolbar {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 10px 16px;
+        align-items: center;
+        padding: 10px 12px;
+        margin-top: 10px;
+        background: #0d131d;
+        border: 1px solid #293548;
+        border-radius: 10px;
+      }
+      .view-toolbar[hidden],
+      .sub-tree[hidden] {
+        display: none;
+      }
+      .view-toolbar label.toggle {
+        display: flex;
+        align-items: center;
+        gap: 7px;
+        margin: 0;
+        color: var(--ink);
+        cursor: pointer;
+      }
+      .sub-tree {
+        flex: 1 1 100%;
+        border-top: 1px solid #293548;
+        padding-top: 8px;
+      }
+      .sub-tree summary {
+        cursor: pointer;
+        color: var(--muted);
+        font-size: 13px;
+      }
+      .sub-tree-actions {
+        display: flex;
+        gap: 8px;
+        margin: 8px 0;
+      }
+      .sub-tree-actions button {
+        padding: 4px 9px;
+        font-size: 12px;
+      }
+      .sub-tree-list {
+        display: flex;
+        flex-direction: column;
+        gap: 2px;
+        max-height: 220px;
+        overflow: auto;
+      }
+      .sub-tree-list label {
+        display: flex;
+        align-items: center;
+        gap: 7px;
+        margin: 0;
+        padding: 2px 4px;
+        border-radius: 5px;
+        font-size: 13px;
+        color: var(--ink);
+        cursor: pointer;
+      }
+      .sub-tree-list label:hover {
+        background: #172331;
+      }
+      .sub-tree-list label.off {
+        opacity: 0.45;
+      }
       .npc-tile {
         position: relative;
       }
@@ -851,6 +933,24 @@
               <button class="primary" id="createFolder">＋ Créer</button>
             </div>
           </div>
+          <div id="viewToolbar" class="view-toolbar" hidden>
+            <label class="toggle"
+              ><input type="checkbox" id="showNestedCards" checked />
+              Afficher les cartes des sous-dossiers</label
+            >
+            <span class="hint" id="viewHiddenInfo" aria-live="polite"></span>
+            <details id="subTree" class="sub-tree" hidden>
+              <summary>
+                Choisir les sous-dossiers affichés
+                <span id="subTreeCount"></span>
+              </summary>
+              <div class="sub-tree-actions">
+                <button type="button" id="subTreeAll">Tout afficher</button>
+                <button type="button" id="subTreeNone">Tout masquer</button>
+              </div>
+              <div id="subTreeList" class="sub-tree-list"></div>
+            </details>
+          </div>
           <div
             id="propsToolbar"
             class="row props-toolbar"
@@ -866,7 +966,7 @@
               Coller sur la carte en cours d’édition
             </button>
             <button type="button" id="pasteFolderProps">
-              Coller sur le dossier affiché et ses sous-dossiers
+              Coller sur les cartes affichées du dossier
             </button>
             <label style="display: flex; align-items: center; gap: 6px"
               ><input type="checkbox" id="copyBackProp" /> Inclure le
@@ -5660,6 +5760,67 @@
         });
 
         // ---------- Bibliothèque et exports ----------
+        // Visibilité dans la bibliothèque (état d'affichage uniquement, non sauvegardé)
+        let showNested = true; // afficher les cartes qui ne sont pas directement dans le dossier actif
+        const hiddenSubs = new Set(); // chemins de sous-dossiers masqués
+        const isUnder = (path, base) =>
+          base ? path.startsWith(base + "/") : path !== "";
+        function cardVisible(c) {
+          const path = c.folder || "";
+          if (path === activeFolder) return true;
+          if (!isUnder(path, activeFolder) || !showNested) return false;
+          const rest = activeFolder
+            ? path.slice(activeFolder.length + 1)
+            : path;
+          let cur = activeFolder;
+          for (const part of rest.split("/")) {
+            cur = cur ? cur + "/" + part : part;
+            if (hiddenSubs.has(cur)) return false;
+          }
+          return true;
+        }
+        function renderViewToolbar() {
+          const bar = $("viewToolbar"),
+            det = $("subTree"),
+            tree = $("subTreeList");
+          const subs = folders
+            .filter((f) => isUnder(f, activeFolder))
+            .sort((a, b) => a.localeCompare(b, "fr"));
+          const under = cards.filter((c) => isUnder(c.folder || "", activeFolder));
+          bar.hidden = !subs.length && !under.length;
+          det.hidden = !subs.length;
+          $("showNestedCards").checked = showNested;
+          const hiddenN = under.filter((c) => !cardVisible(c)).length;
+          $("viewHiddenInfo").textContent = hiddenN
+            ? hiddenN + " carte(s) masquée(s)"
+            : "";
+          $("subTreeCount").textContent = subs.length
+            ? "(" + subs.filter((f) => !hiddenSubs.has(f)).length + "/" + subs.length + ")"
+            : "";
+          tree.innerHTML = "";
+          const baseDepth = folderDepth(activeFolder);
+          subs.forEach((f) => {
+            let ancestorHidden = false;
+            for (let a = parentFolder(f); a && a !== activeFolder; a = parentFolder(a))
+              if (hiddenSubs.has(a)) ancestorHidden = true;
+            const off = !showNested || ancestorHidden;
+            const lab = document.createElement("label");
+            if (off) lab.className = "off";
+            lab.style.paddingLeft = 4 + (folderDepth(f) - baseDepth - 1) * 18 + "px";
+            const cb = document.createElement("input");
+            cb.type = "checkbox";
+            cb.checked = !hiddenSubs.has(f);
+            cb.disabled = off;
+            cb.onchange = () => {
+              if (cb.checked) hiddenSubs.delete(f);
+              else hiddenSubs.add(f);
+              renderLibrary();
+            };
+            const n = cards.filter((c) => (c.folder || "") === f).length;
+            lab.append(cb, "📁 " + f.split("/").pop() + " (" + n + ")");
+            tree.appendChild(lab);
+          });
+        }
         const parentFolder = (path) =>
           path.includes("/") ? path.slice(0, path.lastIndexOf("/")) : "";
         const folderDepth = (path) => (path ? path.split("/").length : 0);
@@ -5686,6 +5847,46 @@
             crumb.style.width = "100%";
             crumb.textContent = "📂 " + activeFolder.replace(/\//g, "  ›  ");
             list.appendChild(crumb);
+          }
+          if (activeFolder) {
+            const par = parentFolder(activeFolder);
+            const up = document.createElement("div");
+            up.className = "folder-chip folder-up";
+            up.tabIndex = 0;
+            up.setAttribute("role", "button");
+            up.textContent =
+              "⬆ Dossier parent : " + (par ? par.split("/").pop() : "racine");
+            up.title =
+              "Remonter vers " +
+              (par ? "« " + par.replace(/\//g, " › ") + " »" : "la racine") +
+              " (déposez une carte ici pour la déplacer dans ce dossier)";
+            const goUp = () => {
+              activeFolder = par;
+              renderLibrary();
+            };
+            up.addEventListener("click", goUp);
+            up.addEventListener("keydown", (e) => {
+              if (e.key === "Enter" || e.key === " ") {
+                e.preventDefault();
+                goUp();
+              }
+            });
+            up.addEventListener("dragover", (e) => {
+              e.preventDefault();
+              e.dataTransfer.dropEffect = "move";
+              up.classList.add("drop-target");
+            });
+            up.addEventListener("dragleave", () =>
+              up.classList.remove("drop-target"),
+            );
+            up.addEventListener("drop", (e) => {
+              e.preventDefault();
+              e.stopPropagation();
+              up.classList.remove("drop-target");
+              if (draggedFolder) moveDraggedFolder(par);
+              else moveDraggedCard(par);
+            });
+            list.appendChild(up);
           }
           const all = document.createElement("div");
           all.className = "folder-chip";
@@ -5753,12 +5954,12 @@
               renderLibrary();
             };
             chip.addEventListener("click", (e) => {
-              if (!e.target.closest(".folder-delete")) open();
+              if (!e.target.closest(".folder-delete, .folder-eye")) open();
             });
             chip.addEventListener("keydown", (e) => {
               if (
                 (e.key === "Enter" || e.key === " ") &&
-                !e.target.closest(".folder-delete")
+                !e.target.closest(".folder-delete, .folder-eye")
               ) {
                 e.preventDefault();
                 open();
@@ -5779,6 +5980,9 @@
                 )
               ) {
                 const parent = parentFolder(name);
+                [...hiddenSubs].forEach((h) => {
+                  if (h === name || h.startsWith(name + "/")) hiddenSubs.delete(h);
+                });
                 folders = folders.filter(
                   (f) => f !== name && !f.startsWith(name + "/"),
                 );
@@ -5798,6 +6002,24 @@
                 renderLibrary();
               }
             };
+            const hid = hiddenSubs.has(name);
+            if (hid || !showNested) chip.classList.add("sub-hidden");
+            const eye = document.createElement("button");
+            eye.className = "folder-eye";
+            eye.type = "button";
+            eye.textContent = hid ? "🚫" : "👁";
+            eye.title = hid
+              ? "Afficher les cartes de ce sous-dossier"
+              : "Masquer les cartes de ce sous-dossier";
+            eye.setAttribute("aria-label", eye.title);
+            eye.setAttribute("aria-pressed", String(!hid));
+            eye.onclick = (e) => {
+              e.stopPropagation();
+              if (hid) hiddenSubs.delete(name);
+              else hiddenSubs.add(name);
+              renderLibrary();
+            };
+            chip.appendChild(eye);
             chip.appendChild(del);
             chip.addEventListener("dragover", (e) => {
               e.preventDefault();
@@ -5816,6 +6038,7 @@
             });
             list.appendChild(chip);
           });
+          renderViewToolbar();
         }
         let draggedCardId = null;
         let draggedFolder = null;
@@ -5878,6 +6101,12 @@
             subtree.map((f) => [f, dest + f.slice(source.length)]),
           );
           folders = folders.map((f) => mapping.get(f) || f);
+          [...hiddenSubs].forEach((h) => {
+            if (mapping.has(h)) {
+              hiddenSubs.delete(h);
+              hiddenSubs.add(mapping.get(h));
+            }
+          });
           cards.forEach((c) => {
             const old = c.folder || "";
             for (const [from, to] of mapping)
@@ -5993,21 +6222,16 @@
             return setStatus("Copiez d’abord les propriétés d’une carte.");
           if (!activeFolder)
             return setStatus("Ouvrez d’abord un dossier dans la bibliothèque.");
-          const targets = cards.filter((c) => {
-            const path = c.folder || "";
-            return path === activeFolder || path.startsWith(activeFolder + "/");
-          });
+          const targets = cards.filter(cardVisible);
           if (!targets.length)
-            return setStatus(
-              "Aucune carte dans ce dossier ni dans ses sous-dossiers.",
-            );
+            return setStatus("Aucune carte affichée dans ce dossier.");
           if (
             !confirm(
               "Appliquer les propriétés copiées à " +
                 targets.length +
                 " carte(s) dans « " +
                 activeFolder.replace(/\//g, " › ") +
-                " » et tous ses sous-dossiers ?",
+                " » (cartes actuellement affichées uniquement) ?",
             )
           )
             return;
@@ -6024,20 +6248,18 @@
           renderFolders();
           const root = $("library");
           root.innerHTML = "";
-          const visible = activeFolder
-            ? cards.filter((c) => {
-                const path = c.folder || "";
-                return (
-                  path === activeFolder || path.startsWith(activeFolder + "/")
-                );
-              })
-            : cards;
+          const visible = cards.filter(cardVisible);
           if (!visible.length) {
+            const anyHidden = cards.some((c) =>
+              isUnder(c.folder || "", activeFolder),
+            );
             root.innerHTML =
               '<div class="empty">' +
-              (activeFolder
-                ? "Aucune carte dans ce dossier ni dans ses sous-dossiers."
-                : "Aucune carte enregistrée.") +
+              (anyHidden
+                ? "Aucune carte à afficher : les cartes des sous-dossiers sont masquées."
+                : activeFolder
+                  ? "Aucune carte dans ce dossier ni dans ses sous-dossiers."
+                  : "Aucune carte enregistrée.") +
               "</div>";
             return;
           }
@@ -7512,6 +7734,20 @@
           activeFolder = e.target.value;
           renderLibrary();
         });
+        $("showNestedCards").addEventListener("change", (e) => {
+          showNested = e.target.checked;
+          renderLibrary();
+        });
+        const subsOfActive = () => folders.filter((f) => isUnder(f, activeFolder));
+        $("subTreeAll").onclick = () => {
+          subsOfActive().forEach((f) => hiddenSubs.delete(f));
+          showNested = true;
+          renderLibrary();
+        };
+        $("subTreeNone").onclick = () => {
+          subsOfActive().forEach((f) => hiddenSubs.add(f));
+          renderLibrary();
+        };
 
         (async () => {
           fresh();
