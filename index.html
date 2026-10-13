@@ -388,6 +388,14 @@
         opacity: 0.45;
         text-decoration: line-through;
       }
+      .folder-chip .folder-rename {
+        flex: 0 0 auto;
+        width: 26px;
+        height: 26px;
+        padding: 0;
+        font-size: 13px;
+        line-height: 1;
+      }
       .folder-chip .folder-eye {
         flex: 0 0 auto;
         width: 26px;
@@ -5846,6 +5854,13 @@
             crumb.className = "hint";
             crumb.style.width = "100%";
             crumb.textContent = "📂 " + activeFolder.replace(/\//g, "  ›  ");
+            const rn = document.createElement("button");
+            rn.type = "button";
+            rn.textContent = "✎ Renommer";
+            rn.title = "Renommer le dossier affiché";
+            rn.style.cssText = "margin-left:10px;padding:2px 8px;font-size:12px";
+            rn.onclick = () => renameFolder(activeFolder);
+            crumb.appendChild(rn);
             list.appendChild(crumb);
           }
           if (activeFolder) {
@@ -5954,12 +5969,12 @@
               renderLibrary();
             };
             chip.addEventListener("click", (e) => {
-              if (!e.target.closest(".folder-delete, .folder-eye")) open();
+              if (!e.target.closest(".folder-delete, .folder-eye, .folder-rename")) open();
             });
             chip.addEventListener("keydown", (e) => {
               if (
                 (e.key === "Enter" || e.key === " ") &&
-                !e.target.closest(".folder-delete, .folder-eye")
+                !e.target.closest(".folder-delete, .folder-eye, .folder-rename")
               ) {
                 e.preventDefault();
                 open();
@@ -6019,6 +6034,17 @@
               else hiddenSubs.add(name);
               renderLibrary();
             };
+            const ren = document.createElement("button");
+            ren.className = "folder-rename";
+            ren.type = "button";
+            ren.textContent = "✎";
+            ren.title = "Renommer ce dossier";
+            ren.setAttribute("aria-label", "Renommer le dossier " + name);
+            ren.onclick = (e) => {
+              e.stopPropagation();
+              renameFolder(name);
+            };
+            chip.appendChild(ren);
             chip.appendChild(eye);
             chip.appendChild(del);
             chip.addEventListener("dragover", (e) => {
@@ -6121,6 +6147,44 @@
           persist();
           renderLibrary();
           setStatus("Dossier déplacé : " + dest.replace(/\//g, " › "));
+        }
+        function renameFolder(source) {
+          const oldLeaf = source.split("/").pop();
+          const input = prompt("Nouveau nom du dossier :", oldLeaf);
+          if (input === null) return;
+          const leaf = input.trim().replace(/[\\/]/g, "-").slice(0, 40);
+          if (!leaf) return setStatus("Le nom du dossier ne peut pas être vide.");
+          if (leaf === oldLeaf) return;
+          const parent = parentFolder(source);
+          const dest = parent ? parent + "/" + leaf : leaf;
+          if (
+            folders.some(
+              (f) =>
+                f.toLowerCase() === dest.toLowerCase() &&
+                f !== source &&
+                !f.startsWith(source + "/"),
+            )
+          )
+            return setStatus("Un dossier portant ce nom existe déjà à cet emplacement.");
+          const remap = (path) =>
+            path === source || path.startsWith(source + "/")
+              ? dest + path.slice(source.length)
+              : path;
+          folders = folders.map(remap);
+          cards.forEach((c) => {
+            if (c.folder) c.folder = remap(c.folder);
+          });
+          [...hiddenSubs].forEach((h) => {
+            const n = remap(h);
+            if (n !== h) {
+              hiddenSubs.delete(h);
+              hiddenSubs.add(n);
+            }
+          });
+          activeFolder = remap(activeFolder);
+          persist();
+          renderLibrary();
+          setStatus("Dossier renommé : " + dest.replace(/\//g, " › "));
         }
         function moveDraggedCard(folder) {
           if (draggedCardId == null) return;
