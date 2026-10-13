@@ -386,6 +386,11 @@
       .npc-tile[draggable="true"] {
         cursor: grab;
       }
+      .npc-tile.drop-target {
+        outline: 2px dashed var(--ui);
+        outline-offset: 2px;
+        background: #172331;
+      }
       .npc-tile.dragging {
         opacity: 0.45;
       }
@@ -872,7 +877,7 @@
             >
           </div>
           <p class="hint">
-            Glissez une carte vers un dossier, ou glissez un dossier sur un
+            Glissez une carte vers un dossier, ou sur une autre carte pour la ranger dans le même dossier ; glissez un dossier sur un
             autre pour l’y imbriquer. Cliquez sur une carte pour l’agrandir ;
             cliquez en dehors de la carte pour fermer le zoom.
           </p>
@@ -5886,7 +5891,7 @@
           draggedFolder = null;
           persist();
           renderLibrary();
-          setStatus("Dossier déplacé : " + dest.replace(/\\/ / g, " › "));
+          setStatus("Dossier déplacé : " + dest.replace(/\//g, " › "));
         }
         function moveDraggedCard(folder) {
           if (draggedCardId == null) return;
@@ -6046,11 +6051,41 @@
             tile.draggable = true;
             tile.tabIndex = 0;
             tile.title =
-              "Cliquer sur l’image pour agrandir • Cliquer en dehors pour fermer • Glisser-déposer vers un dossier";
+              "Cliquer sur l’image pour agrandir • Cliquer en dehors pour fermer • Glisser-déposer vers un dossier ou sur une autre carte";
             tile.addEventListener("dragstart", (e) => {
               draggedCardId = d.id;
               tile.classList.add("dragging");
               e.dataTransfer.effectAllowed = "move";
+            });
+            tile.addEventListener("dragover", (e) => {
+              if (draggedCardId == null || draggedCardId === d.id) return;
+              e.preventDefault();
+              e.dataTransfer.dropEffect = "move";
+              tile.classList.add("drop-target");
+            });
+            tile.addEventListener("dragleave", (e) => {
+              if (!tile.contains(e.relatedTarget))
+                tile.classList.remove("drop-target");
+            });
+            tile.addEventListener("drop", (e) => {
+              if (draggedCardId == null || draggedCardId === d.id) return;
+              e.preventDefault();
+              e.stopPropagation();
+              tile.classList.remove("drop-target");
+              const src = cards.find((x) => x.id === draggedCardId);
+              const dest = d.folder || "";
+              if (!src) return;
+              if ((src.folder || "") === dest) {
+                draggedCardId = null;
+                setStatus("Ces deux cartes sont déjà dans le même dossier.");
+                return;
+              }
+              const name = src.name;
+              moveDraggedCard(dest);
+              setStatus(
+                "« " + name + " » déplacée vers " +
+                  (dest ? "« " + dest.replace(/\//g, " › ") + " »" : "la racine (sans dossier)") + ".",
+              );
             });
             tile.addEventListener("dragend", () => {
               draggedCardId = null;
