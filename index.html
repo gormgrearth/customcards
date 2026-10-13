@@ -83,10 +83,31 @@
   select option{background:#090c11;color:var(--ink);padding:4px 8px}
   select optgroup{font:700 12px system-ui,sans-serif;color:var(--ui);background:#0d131d;font-style:normal}
   #fontT,#fontB{font-size:17px}
+  [hidden]{display:none!important}
+  a{color:var(--ui)}
+  input[type=email],input[type=password]{width:100%;background:#090c11;color:var(--ink);border:1px solid #4a566b;border-radius:7px;padding:9px 10px;font:inherit}
+  header{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap}
+  .acct{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+  .acct .hint.bad,#syncState.bad{color:#ffa3ad}
+  dialog{background:#131923;color:var(--ink);border:1px solid var(--line);border-radius:12px;padding:20px;width:min(94vw,460px);max-height:92vh;overflow:auto}
+  dialog.wide{width:min(96vw,1000px)}
+  dialog::backdrop{background:#000b}
+  .share-row{border:1px solid #344155;border-radius:10px;padding:10px;margin:8px 0;background:#0d131d}
+  .share-code{font:700 15px ui-monospace,monospace;color:var(--ui);margin-top:4px;user-select:all}
 </style>
 </head>
 <body>
-<header><h1>Atelier de cartes PNJ</h1></header>
+<header>
+  <h1>Atelier de cartes PNJ</h1>
+  <div id="acctBar" class="acct">
+    <span id="syncState" class="hint" role="status"></span>
+    <span id="acctName"></span>
+    <button id="syncBtn" type="button" title="Synchroniser maintenant" aria-label="Synchroniser maintenant" hidden>↻</button>
+    <button id="codeBtn" type="button" hidden>🔑 Code de partage</button>
+    <button id="loginBtn" class="primary" type="button" hidden>Connexion</button>
+    <button id="logoutBtn" type="button" hidden>Déconnexion</button>
+  </div>
+</header>
 <main>
   <section class="panel editor">
     <h2>Créer / modifier un PNJ</h2>
@@ -146,7 +167,7 @@
     </div>
     <div class="panel" style="margin-top:20px">
       <div class="library-head"><h2 style="margin:0">Bibliothèque</h2>
-        <div class="row"><button id="exportAll">Tous les JPG</button><button id="backup">Sauvegarde .json</button><button id="restore">Restaurer</button><input id="restoreFile" type="file" accept=".json,application/json" hidden></div>
+        <div class="row"><button id="shareBtn" type="button" hidden>🔗 Partager…</button><button id="exportAll">Tous les JPG</button><button id="backup">Sauvegarde .json</button><button id="restore">Restaurer</button><input id="restoreFile" type="file" accept=".json,application/json" hidden></div>
       </div>
       <div class="library-toolbar">
         <div class="row" style="flex:1;min-width:200px">
@@ -176,6 +197,51 @@
     </div>
   </section>
 </main>
+<dialog id="authDlg">
+  <form id="authForm">
+    <h2 id="authTitle">Connexion</h2>
+    <div id="authPseudoWrap" hidden><label for="authPseudo">Pseudo (affiché sur vos partages)</label><input id="authPseudo" type="text" maxlength="30" autocomplete="nickname"></div>
+    <label for="authEmail">E-mail</label><input id="authEmail" type="email" required autocomplete="email">
+    <label for="authPw">Mot de passe</label><input id="authPw" type="password" required minlength="6" autocomplete="current-password">
+    <div id="authMsg" class="hint" role="alert" style="min-height:1.4em;margin-top:8px"></div>
+    <div class="btnrow"><button class="primary" id="authSubmit" type="submit">Se connecter</button><button type="button" data-close>Annuler</button></div>
+    <p class="hint"><a href="#" id="authSwitch">Pas de compte ? En créer un</a><span id="authResetWrap"> · <a href="#" id="authReset">Mot de passe oublié ?</a></span></p>
+  </form>
+</dialog>
+<dialog id="shareDlg">
+  <h2>Partager mes cartes</h2>
+  <div id="shareLogin" hidden><p>Connectez-vous pour créer un code de partage.</p><button class="primary" id="shareLoginBtn" type="button">Connexion</button></div>
+  <div id="shareMain" hidden>
+    <p class="hint">Un code donne un accès en lecture à une <strong>copie</strong> des cartes du dossier choisi (sous-dossiers inclus). Toute personne qui possède le code peut les voir et les importer. Vous pouvez mettre à jour ou révoquer un partage à tout moment.</p>
+    <label for="shareScope">Dossier à partager</label><select id="shareScope"></select>
+    <label for="shareLabel">Nom du partage (facultatif)</label><input id="shareLabel" type="text" maxlength="60">
+    <div class="row" style="margin-top:10px"><label><input type="checkbox" id="shareBacks" checked> Inclure les versos</label></div>
+    <div class="btnrow"><button class="primary" id="shareCreate" type="button">Créer un code de partage</button></div>
+    <div id="shareMsg" class="hint" role="status" style="margin-top:8px;word-break:break-all"></div>
+    <h2 style="margin-top:18px">Mes partages</h2><div id="myShares"></div>
+  </div>
+  <div class="btnrow"><button type="button" data-close>Fermer</button></div>
+</dialog>
+<dialog id="sharedDlg" class="wide">
+  <h2>Collection partagée</h2>
+  <div class="row"><input id="sharedCode" type="text" placeholder="Code de partage (XXXX-XXXX-XXXX)" aria-label="Code de partage" style="font-family:monospace"><button class="primary" id="sharedOpen" type="button">Ouvrir</button></div>
+  <div id="sharedMsg" class="hint" role="status" style="margin:10px 0"></div>
+  <div id="sharedBody" class="library"></div>
+  <div class="btnrow"><button class="primary" id="sharedImportAll" type="button" hidden>⇩ Tout importer dans ma bibliothèque</button><button type="button" data-close>Fermer</button></div>
+</dialog>
+<script>
+/* ====== CONFIGURATION FIREBASE : remplacez les valeurs « REMPLACER… » par celles de votre application Web
+   (Console Firebase > Paramètres du projet > Vos applications > Configuration du SDK) ====== */
+window.FIREBASE_CONFIG = {
+  apiKey: "REMPLACER_PAR_VOTRE_API_KEY",
+  authDomain: "customcards-d7df7.firebaseapp.com",
+  projectId: "customcards-d7df7",
+  appId: "REMPLACER_PAR_VOTRE_APP_ID"
+};
+</script>
+<script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore-compat.js"></script>
 <script>
 (() => {
   const $ = id => document.getElementById(id);
@@ -277,8 +343,9 @@
   $('showCustomBacks').onclick=()=>{backLibraryMode='custom';renderBackLibrary();};
 
   // ---------- Stockage (IndexedDB) ----------
-  const openDB = () => new Promise((res, rej) => { const r = indexedDB.open('sr_anarchy_pnj', 1); r.onupgradeneeded = () => r.result.createObjectStore('kv'); r.onsuccess = () => res(r.result); r.onerror = () => rej(r.error); });
-  const kv = async (mode, fn) => { const db = await openDB(); return new Promise((res, rej) => { const t = db.transaction('kv', mode), q = fn(t.objectStore('kv')); t.oncomplete = () => res(q && q.result); t.onerror = () => rej(t.error); }); };
+  let ns = '';
+  const openDB = (name = ns) => new Promise((res, rej) => { const r = indexedDB.open('sr_anarchy_pnj' + name, 1); r.onupgradeneeded = () => r.result.createObjectStore('kv'); r.onsuccess = () => res(r.result); r.onerror = () => rej(r.error); });
+  const kv = async (mode, fn, name = ns) => { const db = await openDB(name); return new Promise((res, rej) => { const t = db.transaction('kv', mode), q = fn(t.objectStore('kv')); t.oncomplete = () => { if (mode === 'readwrite') scheduleCloud(); res(q && q.result); }; t.onerror = () => rej(t.error); }); };
   const persist = () => kv('readwrite', s => s.put({cards, nextId, folders}, 'library')).catch(() => setStatus('Enregistrement impossible dans ce navigateur : utilisez « Sauvegarde .json ».'));
 
   // ---------- Utilitaires ----------
@@ -1001,7 +1068,7 @@
     markPressed();
   }
   const syncFontPreview = () => ['fontT', 'fontB'].forEach(id => { const el = $(id); if (el && el.value) el.style.fontFamily = ff(el.value); });
-  const drawCurrent = () => { syncFontPreview(); draw(pctx, read(), art); };
+  const drawCurrent = () => { syncFontPreview(); draw(pctx, read(), art); schedulePrefs(); };
   function applyTheme() {
     const t = THEMES[$('npcTheme').value], known = [...Object.values(THEMES).map(x => x.title), ...OLD_TITLES], cur = $('npcTitle').value.trim().toUpperCase();
     if (!cur || known.includes(cur)) $('npcTitle').value = t.title;
@@ -1230,6 +1297,355 @@
 
   document.addEventListener('keydown', e => { if (e.key === 'Escape') closeZoom(); });
 
+  // ---------- Cloud (Firebase) : compte, synchronisation, partage ----------
+  const cloudOn = !!(window.firebase && window.FIREBASE_CONFIG && window.FIREBASE_CONFIG.apiKey && !/REMPLACER/i.test(window.FIREBASE_CONFIG.apiKey));
+  let fauth = null, fdb = null, user = null, cloudReady = false, pushTimer = null, pushing = false, pushAgain = false;
+  let prefs = null, prefsLoaded = false, prefsTimer = null;
+  let cloudSnap = new Map(), cloudMetaSnap = '', cloudImgs = new Set();
+  let initResolve; const initP = new Promise(r => initResolve = r);
+  const syncEl = $('syncState');
+  const setSync = (t, bad) => { syncEl.textContent = t; syncEl.classList.toggle('bad', !!bad); };
+  const MAX_IMG = 900000; // Firestore : 1 Mio max par document
+  const dirtyKey = () => 'pnj_dirty_' + (user ? user.uid : '');
+
+  const pool = async (items, n, fn) => { let i = 0; await Promise.all(Array.from({length: Math.min(n, items.length)}, async () => { while (i < items.length) { const k = i++; await fn(items[k], k); } })); };
+  const hmemo = new Map();
+  function hashStr(s) {
+    let m = hmemo.get(s); if (m) return m;
+    let h1 = 0xdeadbeef ^ s.length, h2 = 0x41c6ce57 ^ s.length;
+    for (let i = 0; i < s.length; i++) { const ch = s.charCodeAt(i); h1 = Math.imul(h1 ^ ch, 2654435761); h2 = Math.imul(h2 ^ ch, 1597334677); }
+    h1 = Math.imul(h1 ^ (h1 >>> 16), 2246822507) ^ Math.imul(h2 ^ (h2 >>> 13), 3266489909);
+    h2 = Math.imul(h2 ^ (h2 >>> 16), 2246822507) ^ Math.imul(h1 ^ (h1 >>> 13), 3266489909);
+    m = 'i' + (h2 >>> 0).toString(16).padStart(8, '0') + (h1 >>> 0).toString(16).padStart(8, '0') + s.length.toString(36);
+    hmemo.set(s, m); return m;
+  }
+  async function shrinkImage(data) {
+    const im = await loadImage(data); let scale = 1, q = .85;
+    for (let i = 0; i < 10; i++) {
+      scale *= .85; q = Math.max(.6, q - .03);
+      const c = document.createElement('canvas'); c.width = Math.max(1, Math.round(im.width * scale)); c.height = Math.max(1, Math.round(im.height * scale));
+      const x = c.getContext('2d'); x.fillStyle = '#000'; x.fillRect(0, 0, c.width, c.height); x.drawImage(im, 0, 0, c.width, c.height);
+      const out = c.toDataURL('image/jpeg', q); if (out.length <= MAX_IMG) return out;
+    }
+    return null;
+  }
+  const prepMemo = new Map();
+  async function prepImage(data) {
+    if (prepMemo.has(data)) return prepMemo.get(data);
+    let out = data; if (data.length > MAX_IMG) out = await shrinkImage(data).catch(() => null);
+    const r = out ? {hash: hashStr(out), data: out} : null; prepMemo.set(data, r); return r;
+  }
+  // Une carte « cloud » = métadonnées + références d'images (les images sont des documents séparés, dédupliqués par empreinte)
+  async function cardDoc(c, noBack) {
+    const {artData, backArtData, ...rest} = c, images = {}, doc = {...rest};
+    if (artData) { const p = await prepImage(artData); if (p) { doc.artHash = p.hash; images[p.hash] = p.data; } }
+    if (backArtData && !noBack) {
+      const st = BACK_STYLES.find(x => x.data === backArtData);
+      if (st) doc.backStyle = st.name;
+      else { const p = await prepImage(backArtData); if (p) { doc.backHash = p.hash; images[p.hash] = p.data; } }
+    }
+    return {doc: JSON.parse(JSON.stringify(doc)), images};
+  }
+  function rebuildCard(doc, imgOf) {
+    const {artHash, backHash, backStyle, ...c} = doc;
+    if (artHash) c.artData = imgOf(artHash) || null;
+    if (backStyle) c.backArtData = (BACK_STYLES.find(x => x.name === backStyle) || {}).data || null;
+    else if (backHash) c.backArtData = imgOf(backHash) || null;
+    return c;
+  }
+  async function collectState() {
+    const cardDocs = new Map(), images = new Map();
+    for (const c of cards) { const r = await cardDoc(c); cardDocs.set(String(c.id), r.doc); Object.entries(r.images).forEach(([h, d]) => images.set(h, d)); }
+    const backs = [];
+    for (const b of customBacks) { const p = await prepImage(b.data); if (p) { backs.push({name: b.name, hash: p.hash}); images.set(p.hash, p.data); } }
+    const meta = JSON.parse(JSON.stringify({order: cards.map(c => c.id), nextId, folders, customColors, confidentialMode, prefs, backs, v: 1}));
+    return {cardDocs, images, meta};
+  }
+
+  // ----- État local (par compte : une base IndexedDB par utilisateur) -----
+  async function readState(name) {
+    const g = async k => { try { return await kv('readonly', s => s.get(k), name); } catch (_) { return undefined; } };
+    return {lib: await g('library'), colors: await g('customColors'), backs: await g('customBacks'), conf: await g('confidentialMode'), prefs: await g('prefs')};
+  }
+  function applyState(s) {
+    const lib = s.lib || {};
+    cards = (lib.cards || []).map(norm); nextId = lib.nextId || (cards.length + 1);
+    folders = Array.isArray(lib.folders) ? lib.folders : [...new Set(cards.map(c => c.folder).filter(Boolean))];
+    customColors = Array.isArray(s.colors) ? s.colors : []; customBacks = Array.isArray(s.backs) ? s.backs : [];
+    confidentialMode = !!s.conf; prefs = s.prefs || null;
+  }
+  async function loadLocal() { prefsLoaded = false; applyState(await readState(ns)); }
+  async function persistAll() {
+    await persist(); persistColors();
+    await kv('readwrite', s => s.put(customBacks, 'customBacks')).catch(() => {});
+    await kv('readwrite', s => s.put(confidentialMode, 'confidentialMode')).catch(() => {});
+    await kv('readwrite', s => s.put(prefs, 'prefs')).catch(() => {});
+  }
+  function afterStateLoad() {
+    activeFolder = ''; fresh(); $('confidentialMode').checked = confidentialMode;
+    renderCustom(); renderLibrary(); renderBackLibrary();
+    if (prefs && THEMES[prefs.theme]) write({theme: prefs.theme, title: prefs.title, fontT: prefs.fontT, fontB: prefs.fontB, color: prefs.color, opacity: prefs.opacity ?? 88, status: 'Actif', idOn: true, idStr: genId()});
+    drawCurrent(); prefsLoaded = true;
+  }
+  function schedulePrefs() {
+    if (!prefsLoaded) return; clearTimeout(prefsTimer);
+    prefsTimer = setTimeout(() => {
+      const d = read(), p = {theme: d.theme, title: d.title, fontT: d.fontT, fontB: d.fontB, color: d.color, opacity: d.opacity};
+      if (JSON.stringify(p) === JSON.stringify(prefs)) return;
+      prefs = p; kv('readwrite', s => s.put(prefs, 'prefs')).catch(() => {});
+    }, 900);
+  }
+
+  // ----- Synchronisation -----
+  function scheduleCloud() {
+    if (!cloudOn || !user || !cloudReady) return;
+    try { localStorage.setItem(dirtyKey(), '1'); } catch (_) {}
+    setSync('☁ Modifications en attente…'); clearTimeout(pushTimer); pushTimer = setTimeout(cloudPush, 1500);
+  }
+  async function cloudPush() {
+    if (!cloudOn || !user || !cloudReady) return;
+    if (pushing) { pushAgain = true; return; }
+    pushing = true;
+    try {
+      do {
+        pushAgain = false; setSync('☁ Synchronisation…');
+        const uref = fdb.collection('users').doc(user.uid);
+        const {cardDocs, images, meta} = await collectState();
+        const changed = [...cardDocs].filter(([id, d]) => cloudSnap.get(id) !== JSON.stringify(d));
+        const removed = [...cloudSnap.keys()].filter(id => !cardDocs.has(id));
+        const metaStr = JSON.stringify(meta);
+        const newImgs = [...images].filter(([h]) => !cloudImgs.has(h));
+        await pool(newImgs, 4, async ([h, d]) => { await uref.collection('images').doc(h).set({data: d}); cloudImgs.add(h); });
+        await pool(changed, 6, async ([id, d]) => { await uref.collection('cards').doc(id).set(d); cloudSnap.set(id, JSON.stringify(d)); });
+        await pool(removed, 6, async id => { await uref.collection('cards').doc(id).delete(); cloudSnap.delete(id); });
+        if (metaStr !== cloudMetaSnap) { await uref.set(meta); cloudMetaSnap = metaStr; }
+      } while (pushAgain);
+      try { localStorage.removeItem(dirtyKey()); } catch (_) {}
+      setSync('☁ Synchronisé');
+    } catch (e) {
+      console.error(e); setSync('⚠ Échec de synchronisation — nouvel essai dans 15 s', true);
+      clearTimeout(pushTimer); pushTimer = setTimeout(cloudPush, 15000);
+    } finally { pushing = false; }
+  }
+  async function cloudPull() {
+    const uref = fdb.collection('users').doc(user.uid);
+    // Des modifications locales n'ont pas pu être envoyées lors d'une session précédente : elles priment.
+    let dirty = false; try { dirty = !!localStorage.getItem(dirtyKey()); } catch (_) {}
+    if (dirty) { cloudSnap = new Map(); cloudMetaSnap = ''; cloudImgs = new Set(); cloudReady = true; await cloudPush(); return; }
+    setSync('☁ Chargement de votre compte…');
+    const ms = await uref.get();
+    if (!ms.exists) { // compte neuf
+      const g = await readState('');
+      if (g.lib && g.lib.cards && g.lib.cards.length && confirm('Votre compte est vide. Envoyer vers votre compte la bibliothèque présente sur cet appareil (' + g.lib.cards.length + ' carte(s)) ?')) { applyState(g); await persistAll(); afterStateLoad(); }
+      cloudSnap = new Map(); cloudMetaSnap = ''; cloudImgs = new Set(); cloudReady = true; await cloudPush(); return;
+    }
+    const meta = ms.data(), cs = await uref.collection('cards').get();
+    const byId = new Map(cs.docs.map(d => [d.id, d.data()]));
+    // images déjà présentes dans le cache local (évite de tout retélécharger)
+    const have = new Map();
+    for (const c of cards) { if (c.artData) { const p = await prepImage(c.artData); if (p) have.set(p.hash, p.data); } if (c.backArtData) { const p = await prepImage(c.backArtData); if (p) have.set(p.hash, p.data); } }
+    for (const b of customBacks) { const p = await prepImage(b.data); if (p) have.set(p.hash, p.data); }
+    const need = new Set(); byId.forEach(d => { if (d.artHash) need.add(d.artHash); if (d.backHash) need.add(d.backHash); }); (meta.backs || []).forEach(b => need.add(b.hash));
+    const missing = [...need].filter(h => !have.has(h)); let done = 0;
+    await pool(missing, 6, async h => { const s = await uref.collection('images').doc(h).get(); if (s.exists) have.set(h, s.data().data); setSync('☁ Téléchargement des images ' + (++done) + '/' + missing.length + '…'); });
+    const imgOf = h => have.get(h) || null;
+    const order = (meta.order || []).map(String), ids = [...order.filter(id => byId.has(id)), ...[...byId.keys()].filter(id => !order.includes(id))];
+    cards = ids.map(id => norm(rebuildCard(byId.get(id), imgOf)));
+    nextId = Math.max(meta.nextId || 1, ...cards.map(c => (Number(c.id) || 0) + 1));
+    folders = Array.isArray(meta.folders) ? meta.folders : []; customColors = Array.isArray(meta.customColors) ? meta.customColors : [];
+    customBacks = (meta.backs || []).map(b => ({name: b.name, data: imgOf(b.hash)})).filter(b => b.data);
+    confidentialMode = !!meta.confidentialMode; prefs = meta.prefs || null;
+    await persistAll();
+    const st = await collectState();
+    cloudSnap = new Map([...st.cardDocs].map(([id, d]) => [id, JSON.stringify(d)])); cloudMetaSnap = JSON.stringify(st.meta); cloudImgs = new Set(st.images.keys());
+    cloudReady = true; afterStateLoad(); setSync('☁ Synchronisé');
+  }
+
+  // ----- Compte -----
+  const AUTH_ERR = {'auth/invalid-email': 'Adresse e-mail invalide.', 'auth/email-already-in-use': 'Un compte existe déjà avec cet e-mail.', 'auth/weak-password': 'Mot de passe trop faible (6 caractères minimum).', 'auth/invalid-credential': 'E-mail ou mot de passe incorrect.', 'auth/user-not-found': 'E-mail ou mot de passe incorrect.', 'auth/wrong-password': 'E-mail ou mot de passe incorrect.', 'auth/too-many-requests': 'Trop de tentatives, réessayez plus tard.', 'auth/network-request-failed': 'Réseau indisponible.', 'auth/operation-not-allowed': 'La connexion par e-mail / mot de passe n’est pas activée dans Firebase.', 'auth/missing-password': 'Saisissez un mot de passe.'};
+  function updateAccountUI() {
+    $('loginBtn').hidden = !cloudOn || !!user; $('logoutBtn').hidden = !cloudOn || !user; $('syncBtn').hidden = !cloudOn || !user;
+    $('shareBtn').hidden = !cloudOn; $('codeBtn').hidden = !cloudOn;
+    $('acctName').textContent = user ? '👤 ' + (user.displayName || 'Compte connecté') : '';
+    if (!cloudOn) setSync('Mode local — cloud non configuré'); else if (!user) setSync('Mode invité : données enregistrées sur cet appareil uniquement');
+  }
+  async function onAuth(u) {
+    await initP;
+    const prevNs = ns;
+    if (!u && prevNs) { try { await kv('readwrite', s => s.clear(), prevNs); } catch (_) {} } // déconnexion : on vide le cache de ce compte
+    user = u || null; cloudReady = false; clearTimeout(pushTimer); prepMemo.clear();
+    cloudSnap = new Map(); cloudMetaSnap = ''; cloudImgs = new Set();
+    ns = u ? ':' + u.uid : '';
+    updateAccountUI(); await loadLocal(); afterStateLoad();
+    if (u) { try { await cloudPull(); } catch (e) { console.error(e); setSync('⚠ Cloud injoignable : données locales affichées (bouton ↻ pour réessayer)', true); } }
+  }
+  function initCloud() {
+    updateAccountUI(); if (!cloudOn) return;
+    try { firebase.initializeApp(window.FIREBASE_CONFIG); fauth = firebase.auth(); fdb = firebase.firestore(); }
+    catch (e) { console.error(e); setSync('⚠ Configuration Firebase invalide', true); return; }
+    fauth.onAuthStateChanged(onAuth);
+  }
+  let authMode = 'login';
+  function setAuthMode(m) {
+    authMode = m; $('authTitle').textContent = m === 'login' ? 'Connexion' : 'Créer un compte';
+    $('authPseudoWrap').hidden = m !== 'register'; $('authResetWrap').hidden = m !== 'login';
+    $('authSubmit').textContent = m === 'login' ? 'Se connecter' : 'Créer mon compte';
+    $('authSwitch').textContent = m === 'login' ? 'Pas de compte ? En créer un' : 'Déjà un compte ? Se connecter';
+    $('authPw').autocomplete = m === 'login' ? 'current-password' : 'new-password'; $('authMsg').textContent = '';
+  }
+  const openAuth = m => { setAuthMode(m || 'login'); $('authDlg').showModal(); };
+  $('loginBtn').onclick = () => openAuth('login');
+  $('authSwitch').onclick = e => { e.preventDefault(); setAuthMode(authMode === 'login' ? 'register' : 'login'); };
+  $('authReset').onclick = async e => {
+    e.preventDefault(); const email = $('authEmail').value.trim(), msg = $('authMsg');
+    if (!email) { msg.textContent = 'Saisissez d’abord votre e-mail ci-dessus.'; return; }
+    try { await fauth.sendPasswordResetEmail(email); msg.textContent = 'E-mail de réinitialisation envoyé (pensez aux spams).'; }
+    catch (err) { msg.textContent = AUTH_ERR[err.code] || ('Erreur : ' + (err.code || err.message)); }
+  };
+  $('authForm').onsubmit = async e => {
+    e.preventDefault(); const email = $('authEmail').value.trim(), pw = $('authPw').value, msg = $('authMsg'); msg.textContent = ''; $('authSubmit').disabled = true;
+    try {
+      if (authMode === 'login') await fauth.signInWithEmailAndPassword(email, pw);
+      else { const cred = await fauth.createUserWithEmailAndPassword(email, pw); const pseudo = $('authPseudo').value.trim().slice(0, 30); if (pseudo) await cred.user.updateProfile({displayName: pseudo}); updateAccountUI(); }
+      $('authPw').value = ''; $('authDlg').close();
+    } catch (err) { msg.textContent = AUTH_ERR[err.code] || ('Erreur : ' + (err.code || err.message)); }
+    finally { $('authSubmit').disabled = false; }
+  };
+  $('logoutBtn').onclick = async () => {
+    let dirty = false; try { dirty = !!localStorage.getItem(dirtyKey()); } catch (_) {}
+    if (dirty && !confirm('Des modifications ne sont pas encore synchronisées et seront perdues. Se déconnecter quand même ?')) return;
+    try { localStorage.removeItem(dirtyKey()); } catch (_) {}
+    await fauth.signOut();
+  };
+  $('syncBtn').onclick = async () => { try { if (!cloudReady) await cloudPull(); else await cloudPush(); } catch (e) { console.error(e); setSync('⚠ Cloud injoignable', true); } };
+
+  // ----- Partage par code -----
+  const CODE_ALPHA = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+  const genCode = () => { const b = new Uint8Array(12); crypto.getRandomValues(b); const s = Array.from(b, x => CODE_ALPHA[x % 32]).join(''); return s.slice(0, 4) + '-' + s.slice(4, 8) + '-' + s.slice(8); };
+  const normCode = s => { s = (s || '').toUpperCase().replace(/[^A-Z0-9]/g, ''); return s.length === 12 ? s.slice(0, 4) + '-' + s.slice(4, 8) + '-' + s.slice(8) : s; };
+  const shareUrl = code => location.origin + location.pathname + '?code=' + code;
+  const inFolder = (c, f) => !f || c.folder === f || (c.folder || '').startsWith(f + '/');
+  const copyText = async t => { try { await navigator.clipboard.writeText(t); return true; } catch (_) { prompt('Copiez ce texte :', t); return false; } };
+  document.querySelectorAll('dialog [data-close]').forEach(b => b.onclick = () => b.closest('dialog').close());
+
+  async function publishShare({code, folder, label, withBacks, create}) {
+    const list = cards.filter(c => inFolder(c, folder));
+    if (!list.length) throw new Error('Aucune carte dans ce dossier.');
+    const rel = c => !folder ? (c.folder || '') : (c.folder === folder ? '' : c.folder.slice(folder.length + 1));
+    const docs = new Map(), imgs = new Map();
+    for (const c of list) { const r = await cardDoc({...c, folder: rel(c)}, !withBacks); docs.set(String(c.id), r.doc); Object.entries(r.images).forEach(([h, d]) => imgs.set(h, d)); }
+    const sref = fdb.collection('shares').doc(code), FV = firebase.firestore.FieldValue;
+    let old = null;
+    if (create) await sref.set({ownerUid: user.uid, ownerName: user.displayName || 'Anonyme', label, folder, withBacks: !!withBacks, count: docs.size, cardIds: [...docs.keys()], hashes: [...imgs.keys()], createdAt: FV.serverTimestamp(), updatedAt: FV.serverTimestamp()});
+    else {
+      old = (await sref.get()).data(); if (!old) throw new Error('Partage introuvable.');
+      await sref.update({cardIds: [...new Set([...(old.cardIds || []), ...docs.keys()])], hashes: [...new Set([...(old.hashes || []), ...imgs.keys()])]});
+    }
+    await pool([...imgs], 4, async ([h, d]) => { await sref.collection('images').doc(h).set({data: d}); });
+    await pool([...docs], 6, async ([id, d]) => { await sref.collection('cards').doc(id).set(d); });
+    if (old) {
+      await pool((old.cardIds || []).filter(id => !docs.has(id)), 6, id => sref.collection('cards').doc(id).delete());
+      await pool((old.hashes || []).filter(h => !imgs.has(h)), 6, h => sref.collection('images').doc(h).delete());
+      await sref.update({count: docs.size, cardIds: [...docs.keys()], hashes: [...imgs.keys()], label: label || old.label, updatedAt: FV.serverTimestamp()});
+    }
+    return code;
+  }
+  async function revokeShare(code) {
+    const sref = fdb.collection('shares').doc(code), s = await sref.get(); if (!s.exists) return;
+    const d = s.data();
+    await pool(d.cardIds || [], 6, id => sref.collection('cards').doc(id).delete());
+    await pool(d.hashes || [], 6, h => sref.collection('images').doc(h).delete());
+    await sref.delete();
+  }
+  function fillShareScope() {
+    const sel = $('shareScope'); sel.innerHTML = '';
+    const add = (v, t) => { const o = document.createElement('option'); o.value = v; o.textContent = t; sel.appendChild(o); };
+    add('', 'Toutes mes cartes (' + cards.length + ')');
+    folders.slice().sort((a, b) => a.localeCompare(b, 'fr')).forEach(f => add(f, '📁 ' + f.replace(/\//g, ' › ') + ' (' + cards.filter(c => inFolder(c, f)).length + ')'));
+    sel.value = folders.includes(activeFolder) ? activeFolder : '';
+  }
+  async function loadMyShares() {
+    const root = $('myShares'); root.textContent = 'Chargement…';
+    try {
+      const q = await fdb.collection('shares').where('ownerUid', '==', user.uid).get();
+      const rows = q.docs.map(d => ({code: d.id, ...d.data()})).sort((a, b) => ((b.updatedAt && b.updatedAt.seconds) || 0) - ((a.updatedAt && a.updatedAt.seconds) || 0));
+      root.innerHTML = ''; if (!rows.length) { root.textContent = 'Aucun partage actif.'; return; }
+      rows.forEach(r => {
+        const row = document.createElement('div'); row.className = 'share-row';
+        const t = document.createElement('div'); const b = document.createElement('strong'); b.textContent = r.label || 'Partage'; t.appendChild(b);
+        const info = document.createElement('div'); info.className = 'hint'; info.textContent = (r.folder ? '📁 ' + r.folder.replace(/\//g, ' › ') : 'Toutes les cartes') + ' · ' + (r.count || 0) + ' carte(s)' + (r.withBacks ? ' + versos' : '') + (r.updatedAt && r.updatedAt.toDate ? ' · mis à jour le ' + r.updatedAt.toDate().toLocaleString('fr-FR') : '');
+        const code = document.createElement('div'); code.className = 'share-code'; code.textContent = r.code;
+        const act = document.createElement('div'); act.className = 'btnrow'; act.style.marginTop = '8px';
+        const mk = (txt, fn, cls) => { const x = document.createElement('button'); x.type = 'button'; x.textContent = txt; if (cls) x.className = cls; x.onclick = fn; act.appendChild(x); return x; };
+        mk('Copier le lien', async () => { if (await copyText(shareUrl(r.code))) $('shareMsg').textContent = 'Lien copié.'; });
+        mk('Copier le code', async () => { if (await copyText(r.code)) $('shareMsg').textContent = 'Code copié.'; });
+        mk('↻ Mettre à jour', async function () { this.disabled = true; $('shareMsg').textContent = 'Mise à jour…'; try { await publishShare({code: r.code, folder: r.folder || '', label: r.label, withBacks: r.withBacks}); $('shareMsg').textContent = 'Partage mis à jour.'; await loadMyShares(); } catch (e) { console.error(e); $('shareMsg').textContent = 'Échec : ' + (e.message || e.code); this.disabled = false; } });
+        mk('Révoquer', async function () { if (!confirm('Révoquer ce code ? Les personnes qui l’ont ne pourront plus consulter ce partage (les cartes déjà importées leur restent).')) return; this.disabled = true; try { await revokeShare(r.code); await loadMyShares(); } catch (e) { console.error(e); $('shareMsg').textContent = 'Échec : ' + (e.message || e.code); this.disabled = false; } }, 'danger');
+        row.append(t, info, code, act); root.appendChild(row);
+      });
+    } catch (e) { console.error(e); root.textContent = 'Impossible de charger vos partages (' + (e.code || e.message) + ').'; }
+  }
+  async function openShare() {
+    $('shareDlg').showModal(); const li = !!user; $('shareLogin').hidden = li; $('shareMain').hidden = !li; if (!li) return;
+    fillShareScope(); $('shareLabel').value = ''; $('shareMsg').textContent = ''; await loadMyShares();
+  }
+  $('shareBtn').onclick = openShare;
+  $('shareLoginBtn').onclick = () => { $('shareDlg').close(); openAuth('login'); };
+  $('shareCreate').onclick = async function () {
+    const folder = $('shareScope').value, label = ($('shareLabel').value.trim() || (folder ? folder.split('/').pop() : 'Toutes mes cartes')).slice(0, 60), msg = $('shareMsg');
+    if (!cards.some(c => inFolder(c, folder))) { msg.textContent = 'Ce dossier ne contient aucune carte.'; return; }
+    this.disabled = true; msg.textContent = 'Création du partage (envoi des images)…'; const code = genCode();
+    try {
+      await publishShare({code, folder, label, withBacks: $('shareBacks').checked, create: true});
+      await copyText(code); msg.textContent = 'Partage créé. Code : ' + code + ' (copié). Lien : ' + shareUrl(code);
+      await loadMyShares();
+    } catch (e) { console.error(e); msg.textContent = 'Échec : ' + (e.message || e.code); try { await revokeShare(code); } catch (_) {} }
+    finally { this.disabled = false; }
+  };
+
+  // ----- Consulter / importer un partage -----
+  let sharedView = null;
+  function importCards(list, label) {
+    const base = 'Partagés/' + String(label || 'Collection').replace(/[\\/]/g, '-').slice(0, 40);
+    const addF = p => { const parts = p.split('/'); for (let i = 1; i <= parts.length; i++) { const f = parts.slice(0, i).join('/'); if (!folders.includes(f)) folders.push(f); } };
+    addF(base);
+    list.forEach(c => { const folder = [base, c.folder].filter(Boolean).join('/'); addF(folder); const {id, ...rest} = c; cards.unshift({...rest, id: nextId++, folder}); });
+    activeFolder = base; persist(); renderLibrary();
+    setStatus(list.length + ' carte(s) importée(s) dans « ' + base.replace(/\//g, ' › ') + ' ».');
+  }
+  async function openShared(raw) {
+    const dlg = $('sharedDlg'); if (!dlg.open) dlg.showModal();
+    const code = normCode(raw), box = $('sharedBody'), msg = $('sharedMsg'); $('sharedCode').value = code; box.innerHTML = ''; $('sharedImportAll').hidden = true; sharedView = null;
+    if (!fdb) { msg.textContent = 'Le cloud n’est pas configuré dans cette installation.'; return; }
+    if (!code) { msg.textContent = 'Saisissez un code de partage.'; return; }
+    msg.textContent = 'Chargement…';
+    try {
+      const sref = fdb.collection('shares').doc(code), s = await sref.get();
+      if (!s.exists) { msg.textContent = 'Code introuvable (ou partage révoqué).'; return; }
+      const info = s.data(), cs = await sref.collection('cards').get(), imgs = new Map();
+      await pool(info.hashes || [], 6, async h => { const x = await sref.collection('images').doc(h).get(); if (x.exists) imgs.set(h, x.data().data); });
+      const list = cs.docs.map(d => norm(rebuildCard(d.data(), h => imgs.get(h) || null)));
+      sharedView = {code, info, list};
+      msg.textContent = '« ' + (info.label || 'Partage') + ' » — par ' + (info.ownerName || 'Anonyme') + ' · ' + list.length + ' carte(s)';
+      for (const c of list) {
+        const tile = document.createElement('div'); tile.className = 'npc-tile';
+        const mini = document.createElement('canvas'); mini.width = 300; mini.height = 420;
+        const nm = document.createElement('div'); nm.className = 'tile-name'; nm.textContent = c.name;
+        const f = document.createElement('div'); f.className = 'tile-folder'; f.textContent = c.folder ? '📁 ' + c.folder.replace(/\//g, ' › ') : '';
+        const bt = document.createElement('button'); bt.type = 'button'; bt.textContent = '＋ Importer'; bt.style.width = '100%';
+        bt.onclick = () => { importCards([c], info.label); bt.textContent = '✓ Importée'; bt.disabled = true; };
+        tile.append(mini, nm, f, bt); box.appendChild(tile);
+        getImg(c.artData).then(im => draw(mini.getContext('2d'), c, im));
+      }
+      $('sharedImportAll').hidden = !list.length;
+    } catch (e) { console.error(e); msg.textContent = 'Impossible de charger ce partage (' + (e.code || e.message) + ').'; }
+  }
+  $('sharedOpen').onclick = () => openShared($('sharedCode').value);
+  $('sharedCode').addEventListener('keydown', e => { if (e.key === 'Enter') { e.preventDefault(); openShared($('sharedCode').value); } });
+  $('codeBtn').onclick = () => { $('sharedBody').innerHTML = ''; $('sharedMsg').textContent = ''; $('sharedCode').value = ''; $('sharedImportAll').hidden = true; sharedView = null; $('sharedDlg').showModal(); $('sharedCode').focus(); };
+  $('sharedImportAll').onclick = () => { if (!sharedView) return; importCards(sharedView.list, sharedView.info.label); $('sharedDlg').close(); };
+  $('sharedDlg').addEventListener('close', () => { if (new URLSearchParams(location.search).has('code')) history.replaceState(null, '', location.pathname); });
+
   // ---------- Initialisation ----------
   { const groups = {}; Object.entries(THEMES).forEach(([k, t]) => { const g = groups[t.cat] || (groups[t.cat] = Object.assign(document.createElement('optgroup'), {label: t.cat})); const o = document.createElement('option'); o.value = k; o.textContent = t.label; g.appendChild(o); }); Object.values(groups).forEach(g => $('npcTheme').appendChild(g)); }
   ['fontT', 'fontB'].forEach(id => FONT_GROUPS.forEach(([label, list]) => { const g = Object.assign(document.createElement('optgroup'), {label}); list.forEach(f => { const o = document.createElement('option'); o.value = o.textContent = f; o.style.fontFamily = ff(f); o.style.fontSize = '18px'; g.appendChild(o); }); $(id).appendChild(g); }));
@@ -1256,10 +1672,7 @@
 
   (async () => {
     fresh();
-    try { const s = await kv('readonly', s => s.get('library')); if (s) { cards = (s.cards || []).map(norm); nextId = s.nextId || 1; folders = Array.isArray(s.folders) ? s.folders : [...new Set(cards.map(c => c.folder).filter(Boolean))]; } } catch (_) {}
-    try { customColors = (await kv('readonly', s => s.get('customColors'))) || []; } catch (_) {}
-    try { customBacks = (await kv('readonly', s => s.get('customBacks'))) || []; } catch (_) {}
-    try { confidentialMode = !!(await kv('readonly', s => s.get('confidentialMode'))); $('confidentialMode').checked = confidentialMode; } catch (_) {}
+    await loadLocal();
     try { // migration de l'ancienne version (localStorage)
       const old = JSON.parse(localStorage.getItem('shadowrun_anarchy2_npc_cards_v1') || 'null');
       if (old && old.cards && !cards.length) {
@@ -1268,10 +1681,12 @@
         nextId = old.nextId || cards.length + 1; await persist();
       }
     } catch (_) {}
-    { let ch = false; cards.forEach(x => ch = addCustom(x.color) || ch); if (ch) persistColors(); renderCustom(); }
+    { let ch = false; cards.forEach(x => ch = addCustom(x.color) || ch); if (ch) persistColors(); }
+    afterStateLoad();
     if (navigator.storage && navigator.storage.persist) navigator.storage.persist().catch(() => {});
-    renderLibrary(); renderBackLibrary();
     Promise.all(FONTS.map(f => document.fonts.load(`${fw(f, 700)} 20px "${f}"`))).catch(() => {}).then(() => { drawCurrent(); renderLibrary(); });
+    initResolve(); initCloud();
+    const qc = new URLSearchParams(location.search).get('code'); if (qc) openShared(qc);
   })();
 })();
 </script>
