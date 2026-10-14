@@ -206,6 +206,29 @@
         display: block;
         border-radius: 12px;
       }
+      .art-adjust {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+        gap: 8px 14px;
+        margin: 8px 0 4px;
+      }
+      .art-adjust .full {
+        grid-column: 1 / -1;
+        display: flex;
+        gap: 10px;
+        align-items: center;
+        flex-wrap: wrap;
+      }
+      .art-adjust input[type="range"] {
+        width: 100%;
+        accent-color: #00f0ff;
+      }
+      #preview.art-draggable {
+        cursor: grab;
+      }
+      #preview.art-dragging {
+        cursor: grabbing;
+      }
       .library-head {
         display: flex;
         align-items: center;
@@ -782,6 +805,30 @@
         </div>
         <label for="npcArt">Illustration</label>
         <input id="npcArt" type="file" accept="image/*" />
+        <div class="art-adjust" id="artAdjust">
+          <div>
+            <label for="artZoom"
+              >Taille : <span id="artZoomValue">100 %</span></label
+            ><input id="artZoom" type="range" min="50" max="400" value="100" />
+          </div>
+          <div>
+            <label for="artX"
+              >Position horizontale : <span id="artXValue">50 %</span></label
+            ><input id="artX" type="range" min="0" max="100" value="50" />
+          </div>
+          <div>
+            <label for="artY"
+              >Position verticale : <span id="artYValue">50 %</span></label
+            ><input id="artY" type="range" min="0" max="100" value="50" />
+          </div>
+          <div class="full">
+            <button type="button" id="artReset">Recentrer l’illustration</button>
+            <span class="hint" style="margin: 0"
+              >Sur l’aperçu : glissez pour déplacer, Ctrl/⌘ + molette pour
+              redimensionner.</span
+            >
+          </div>
+        </div>
         <div class="back-editor">
           <h2>Face arrière</h2>
           <p class="hint">
@@ -1755,6 +1802,7 @@
         let copiedVisualProps = null,
           copiedVisualPropsSourceId = null;
         const imgCache = new Map();
+        let artGeom = null; // géométrie de l'illustration dans l'aperçu (pour le glisser-déposer)
         const BACK_STYLES = [
           {
             name: "Néon géométrique",
@@ -5001,12 +5049,24 @@
           c.clip();
           let cv = null;
           if (img) {
-            const s = Math.max(aw / img.width, ah / img.height),
-              sw = aw / s,
-              sh = ah / s;
-            cv = { s, sx: (img.width - sw) / 2, sy: (img.height - sh) / 2, sw };
-            c.drawImage(img, cv.sx, cv.sy, sw, sh, ax, ay, aw, ah);
+            // Taille (100 % = remplit le cadre) et position (50 % = centré) réglables.
+            const zm = Math.max(0.5, Math.min(4, (Number(d.artZoom) || 100) / 100)),
+              fx = Math.max(0, Math.min(1, (d.artX ?? 50) / 100)),
+              fy = Math.max(0, Math.min(1, (d.artY ?? 50) / 100));
+            const s = Math.max(aw / img.width, ah / img.height) * zm,
+              dw = img.width * s,
+              dh = img.height * s,
+              left = ax + (aw - dw) * fx,
+              top = ay + (ah - dh) * fy;
+            if (dw < aw || dh < ah) {
+              c.fillStyle = "#080c13";
+              c.fillRect(ax, ay, aw, ah);
+            }
+            c.drawImage(img, left, top, dw, dh);
+            cv = { s, sx: (ax - left) / s, sy: (ay - top) / s, sw: aw / s };
+            if (c === pctx) artGeom = { aw, ah, dw, dh, k: W / c.canvas.width };
           } else {
+            if (c === pctx) artGeom = null;
             c.fillStyle = "#080c13";
             c.fillRect(ax, ay, aw, ah);
             c.strokeStyle = acc;
@@ -5571,6 +5631,9 @@
             idOn: $("idOn").checked,
             opacity: Number($("npcOpacity").value),
             artData,
+            artZoom: Number($("artZoom").value),
+            artX: Number($("artX").value),
+            artY: Number($("artY").value),
           };
           for (const k in KEYS) d[k] = $(KEYS[k]).value.trim();
           d.name = d.name || "Nouveau PNJ";
@@ -5583,7 +5646,19 @@
           $("idOn").checked = !!d.idOn;
           $("npcOpacity").value = d.opacity ?? 88;
           $("opacityValue").textContent = $("npcOpacity").value + " %";
+          setArtAdjust(d.artZoom, d.artX, d.artY);
           setColor(d.color);
+        }
+        function setArtAdjust(z, x, y) {
+          $("artZoom").value = z ?? 100;
+          $("artX").value = x ?? 50;
+          $("artY").value = y ?? 50;
+          syncArtLabels();
+        }
+        function syncArtLabels() {
+          ["artZoom", "artX", "artY"].forEach(
+            (id) => ($(id + "Value").textContent = $(id).value + " %"),
+          );
         }
         function markPressed() {
           document
@@ -5670,6 +5745,7 @@
         const drawCurrent = () => {
           syncFontPreview();
           draw(pctx, read(), art);
+          canvas.classList.toggle("art-draggable", !!(art && artGeom));
           schedulePrefs();
         };
         function applyTheme() {
@@ -5760,6 +5836,7 @@
             })
             .then((im) => {
               art = im;
+              setArtAdjust(100, 50, 50);
               drawCurrent();
               setStatus("Illustration chargée.");
             })
@@ -7746,6 +7823,68 @@
         $("fontT").addEventListener("change", drawCurrent);
         $("fontB").addEventListener("change", drawCurrent);
         $("idOn").addEventListener("change", drawCurrent);
+        ["artZoom", "artX", "artY"].forEach((id) =>
+          $(id).addEventListener("input", () => {
+            syncArtLabels();
+            drawCurrent();
+          }),
+        );
+        $("artReset").onclick = () => {
+          setArtAdjust(100, 50, 50);
+          drawCurrent();
+        };
+        // Glisser sur l'aperçu pour déplacer ; Ctrl/⌘ + molette pour redimensionner
+        (() => {
+          let drag = null;
+          const clamp = (v) => Math.max(0, Math.min(100, v));
+          canvas.addEventListener("pointerdown", (e) => {
+            if (!art || !artGeom || e.pointerType === "touch" || e.button !== 0)
+              return;
+            const r = canvas.getBoundingClientRect();
+            drag = {
+              id: e.pointerId,
+              x: e.clientX,
+              y: e.clientY,
+              fx: Number($("artX").value),
+              fy: Number($("artY").value),
+              u: (canvas.width / r.width) * artGeom.k, // pixels d'écran -> unités de la carte
+            };
+            canvas.setPointerCapture(e.pointerId);
+            canvas.classList.add("art-dragging");
+          });
+          canvas.addEventListener("pointermove", (e) => {
+            if (!drag || e.pointerId !== drag.id || !artGeom) return;
+            const g = artGeom,
+              dx = (e.clientX - drag.x) * drag.u,
+              dy = (e.clientY - drag.y) * drag.u;
+            // left = ax + (aw - dw) * fx  =>  déplacement 1:1 avec le pointeur
+            if (g.aw !== g.dw)
+              $("artX").value = Math.round(clamp(drag.fx + (dx / (g.aw - g.dw)) * 100));
+            if (g.ah !== g.dh)
+              $("artY").value = Math.round(clamp(drag.fy + (dy / (g.ah - g.dh)) * 100));
+            syncArtLabels();
+            drawCurrent();
+          });
+          const end = (e) => {
+            if (!drag || e.pointerId !== drag.id) return;
+            drag = null;
+            canvas.classList.remove("art-dragging");
+          };
+          canvas.addEventListener("pointerup", end);
+          canvas.addEventListener("pointercancel", end);
+          canvas.addEventListener(
+            "wheel",
+            (e) => {
+              if (!art || !(e.ctrlKey || e.metaKey)) return;
+              e.preventDefault();
+              const z = Number($("artZoom").value);
+              $("artZoom").value = Math.max(50, Math.min(400, Math.round(z * (e.deltaY < 0 ? 1.06 : 1 / 1.06))));
+              syncArtLabels();
+              drawCurrent();
+            },
+            { passive: false },
+          );
+        })();
         $("npcOpacity").addEventListener("input", () => {
           $("opacityValue").textContent = $("npcOpacity").value + " %";
           drawCurrent();
