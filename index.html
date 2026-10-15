@@ -195,6 +195,7 @@
         color: var(--muted);
       }
       .card-shell {
+        position: relative;
         width: min(100%, 390px);
         aspect-ratio: 2.5/3.5;
         margin: 8px auto 18px;
@@ -205,6 +206,39 @@
         height: 100%;
         display: block;
         border-radius: 12px;
+      }
+      .hit-layer {
+        position: absolute;
+        inset: 0;
+        pointer-events: none;
+      }
+      .hit-zone {
+        position: absolute;
+        pointer-events: auto;
+        cursor: text;
+        border-radius: 6px;
+        outline: 2px dashed transparent;
+        outline-offset: 1px;
+        transition: outline-color 0.12s, background 0.12s;
+      }
+      .hit-zone:hover,
+      .hit-zone:focus-visible {
+        outline-color: rgba(0, 240, 255, 0.85);
+        background: rgba(0, 240, 255, 0.1);
+      }
+      .inline-editor {
+        position: absolute;
+        z-index: 5;
+        box-sizing: border-box;
+        margin: 0;
+        padding: 4px 8px;
+        background: rgba(5, 8, 14, 0.96);
+        color: #fff;
+        border: 2px solid #00f0ff;
+        border-radius: 8px;
+        box-shadow: 0 6px 24px #000a;
+        outline: none;
+        resize: none;
       }
       .art-adjust {
         display: grid;
@@ -948,7 +982,13 @@
               height="1050"
               aria-label="Aperçu de la carte"
             ></canvas>
+            <div id="hitLayer" class="hit-layer"></div>
           </div>
+          <p class="hint" style="text-align: center; margin: -6px 0 12px">
+            Cliquez sur un élément de la carte (titre, nom, rôle, faction,
+            description, statut, ID) pour le modifier directement ici ; les
+            champs de gauche restent synchronisés.
+          </p>
           <div class="btnrow" style="justify-content: center; margin-top: 0">
             <button class="primary" id="exportCurrent">
               Exporter le recto en JPG</button
@@ -1803,6 +1843,29 @@
           copiedVisualPropsSourceId = null;
         const imgCache = new Map();
         let artGeom = null; // géométrie de l'illustration dans l'aperçu (pour le glisser-déposer)
+        let HIT = {}, // zones cliquables de l'aperçu (coordonnées logiques de la carte)
+          titleHit = null;
+        (() => {
+          // Mesure l'emplacement réel du titre (variable selon le style) pendant le dessin de l'aperçu.
+          const orig = pctx.fillText;
+          pctx.fillText = function (t, x, y, m) {
+            if (titleHit && t === titleHit.text) {
+              const mt = this.measureText(t),
+                al = this.textAlign,
+                x0 = al === "center" ? x - mt.width / 2 : al === "right" || al === "end" ? x - mt.width : x,
+                top = y - (mt.actualBoundingBoxAscent || 22) - 6,
+                bot = y + (mt.actualBoundingBoxDescent || 6) + 6,
+                l = x0 - 8,
+                r = x0 + mt.width + 8,
+                h = HIT.title;
+              if (h) {
+                const L = Math.min(h.x, l), T = Math.min(h.y, top);
+                HIT.title = { x: L, y: T, w: Math.max(h.x + h.w, r) - L, h: Math.max(h.y + h.h, bot) - T };
+              } else HIT.title = { x: l, y: top, w: r - l, h: bot - top };
+            }
+            return orig.call(this, t, x, y, m);
+          };
+        })();
         const BACK_STYLES = [
           {
             name: "Néon géométrique",
@@ -4853,6 +4916,10 @@
             k = c.canvas.width / W;
           const alt = acc.toLowerCase() === "#00f0ff" ? "#FF2D95" : "#00F0FF";
           const [ax, ay, aw, ah] = S.geo || [38, 38, 674, 974];
+          if (c === pctx) {
+            HIT = {};
+            titleHit = null;
+          }
           const px = ax + 10,
             pw = aw - 20,
             py = 752,
@@ -5245,6 +5312,7 @@
 
           // titre de la carte
           const title = (d.title || "").toUpperCase();
+          if (c === pctx) titleHit = { text: title };
           if (T === "terminal") {
             c.strokeStyle = "#02100a";
             c.lineWidth = 2;
@@ -5445,8 +5513,17 @@
             setLS(c, 0);
           }
 
+          if (c === pctx) {
+            titleHit = null;
+            if (!HIT.title) HIT.title = { x: 24, y: 20, w: W - 48, h: 100 };
+          }
           // Panneau descriptif : masqué en mode confidentiel (titre et illustration conservés).
           if (!confidentialMode) {
+            if (c === pctx) {
+              HIT.name = { x: tx - 8, y: py + 6, w: mw + 16, h: 50 };
+              HIT.desc = { x: tx - 8, y: py + 104, w: mw + 16, h: 88 };
+              HIT.status = { x: tx - 8, y: py + ph - 44, w: 240, h: 40 };
+            }
             c.save();
             shape(c, T, px, py, pw, ph, S.pr);
             c.fillStyle = `rgba(6,7,10,${op})`;
@@ -5569,6 +5646,26 @@
               fitFont(c, rt, fB, fw(fB, 700), 24, 16, mw);
               c.fillStyle = acc;
               c.fillText(rt, tx, py + 84);
+              if (c === pctx) {
+                const total = c.measureText(rt).width;
+                if (d.role && d.tag) {
+                  const sp =
+                    c.measureText((T === "terminal" ? "[ " : "") + d.role).width +
+                    c.measureText("  •  ").width / 2;
+                  HIT.role = { x: tx - 8, y: py + 58, w: sp + 8, h: 36 };
+                  HIT.tag = { x: tx + sp, y: py + 58, w: total - sp + 8, h: 36 };
+                } else {
+                  const own = d.role ? "role" : "tag",
+                    other = d.role ? "tag" : "role",
+                    rest = mw - total - 24;
+                  HIT[own] = { x: tx - 8, y: py + 58, w: total + 16, h: 36 };
+                  if (rest >= 70)
+                    HIT[other] = { x: tx + total + 20, y: py + 58, w: rest, h: 36 };
+                }
+              }
+            } else if (c === pctx) {
+              HIT.role = { x: tx - 8, y: py + 58, w: mw / 2 - 4, h: 36 };
+              HIT.tag = { x: tx + mw / 2 + 4, y: py + 58, w: mw / 2 - 4, h: 36 };
             }
             setLS(c, 0);
             c.fillStyle = "rgba(255,255,255,.28)";
@@ -5610,6 +5707,10 @@
             );
             if (d.idOn && d.idStr) {
               c.font = `400 17px "Share Tech Mono",monospace`;
+              if (c === pctx) {
+                const iw = c.measureText(d.idStr).width;
+                HIT.idStr = { x: rx - iw - 8, y: py + ph - 40, w: iw + 16, h: 32 };
+              }
               c.fillStyle = "#d6dce8";
               c.textAlign = "right";
               c.fillText(d.idStr, rx, py + ph - 15);
@@ -5742,9 +5843,118 @@
             const el = $(id);
             if (el && el.value) el.style.fontFamily = ff(el.value);
           });
+        const HIT_LABELS = {
+          title: "le titre",
+          name: "le nom",
+          role: "le rôle",
+          tag: "la faction / origine",
+          desc: "la description",
+          status: "le statut",
+          idStr: "l’ID",
+        };
+        let inlineEd = null;
+        function closeInlineEditor() {
+          if (!inlineEd) return;
+          const e = inlineEd;
+          inlineEd = null;
+          e.remove();
+        }
+        function renderHitZones() {
+          const layer = $("hitLayer");
+          if (!layer) return;
+          layer.textContent = "";
+          Object.entries(HIT).forEach(([key, r]) => {
+            const x = Math.max(0, r.x),
+              y = Math.max(0, r.y),
+              w = Math.min(W - x, r.w),
+              h = Math.min(H - y, r.h);
+            if (w <= 0 || h <= 0) return;
+            const z = document.createElement("div");
+            z.className = "hit-zone";
+            z.dataset.key = key;
+            z.tabIndex = 0;
+            z.setAttribute("role", "button");
+            z.setAttribute("aria-label", "Modifier " + HIT_LABELS[key]);
+            z.title = "Cliquer pour modifier " + HIT_LABELS[key];
+            z.style.cssText =
+              "left:" + (x / W) * 100 + "%;top:" + (y / H) * 100 +
+              "%;width:" + (w / W) * 100 + "%;height:" + (h / H) * 100 + "%";
+            z.onclick = () => openInlineEditor(key);
+            z.onkeydown = (e) => {
+              if (e.key === "Enter" || e.key === " ") {
+                e.preventDefault();
+                openInlineEditor(key);
+              }
+            };
+            layer.appendChild(z);
+          });
+        }
+        function openInlineEditor(key) {
+          closeInlineEditor();
+          const r = HIT[key],
+            field = $(KEYS[key]),
+            shell = $("hitLayer").parentElement;
+          if (!r || !field) return;
+          const sw = shell.clientWidth,
+            sh = shell.clientHeight,
+            sc = sw / W,
+            isSel = field.tagName === "SELECT",
+            isArea = key === "desc",
+            ed = document.createElement(isSel ? "select" : isArea ? "textarea" : "input"),
+            orig = field.value;
+          ed.className = "inline-editor";
+          if (isSel) ed.innerHTML = field.innerHTML;
+          else if (!isArea) ed.type = "text";
+          ed.value = orig;
+          if (field.maxLength > 0) ed.maxLength = field.maxLength;
+          ed.setAttribute("aria-label", "Modifier " + HIT_LABELS[key]);
+          if (key === "name") ed.placeholder = "Nouveau PNJ";
+          const w = Math.min(sw - 8, Math.max(r.w * sc, isArea ? sw * 0.8 : 190)),
+            h = isArea ? Math.max(r.h * sc, 96) : Math.max(r.h * sc, 34),
+            l = Math.max(4, Math.min(r.x * sc, sw - w - 4)),
+            t = Math.max(4, Math.min(r.y * sc, sh - h - 4));
+          ed.style.cssText =
+            "left:" + l + "px;top:" + t + "px;width:" + w + "px;height:" + h + "px;" +
+            "font-family:" + ff(key === "title" || key === "name" ? $("fontT").value : $("fontB").value) + ";" +
+            "font-size:" + Math.max(13, Math.min(20, r.h * sc * 0.55)) + "px;" +
+            "border-color:" + color;
+          const apply = () => {
+            field.value = ed.value;
+            field.dispatchEvent(new Event("input", { bubbles: true }));
+          };
+          ed.addEventListener("input", apply);
+          ed.addEventListener("change", () => {
+            apply();
+            if (isSel) closeInlineEditor();
+          });
+          ed.addEventListener("keydown", (e) => {
+            e.stopPropagation();
+            if (e.key === "Escape") {
+              e.preventDefault();
+              ed.value = orig;
+              apply();
+              closeInlineEditor();
+            } else if (e.key === "Enter" && (!isArea || e.ctrlKey || e.metaKey)) {
+              e.preventDefault();
+              closeInlineEditor();
+            }
+          });
+          ed.addEventListener("blur", () => {
+            if (inlineEd === ed) closeInlineEditor();
+          });
+          shell.appendChild(ed);
+          inlineEd = ed;
+          ed.focus();
+          if (isSel) {
+            try {
+              ed.showPicker && ed.showPicker();
+            } catch (_) {}
+          } else ed.select();
+        }
         const drawCurrent = () => {
           syncFontPreview();
           draw(pctx, read(), art);
+          renderHitZones();
           canvas.classList.toggle("art-draggable", !!(art && artGeom));
           schedulePrefs();
         };
