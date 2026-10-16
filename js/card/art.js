@@ -41,5 +41,8 @@ $("npcArt").addEventListener("change", (e) => {
       setStatus("Illustration chargée.");
     })
     .catch(() => setStatus("Impossible de lire cette image."))
-    .finally(() => URL.revokeObjectURL(url));
+    .finally(() => {
+      URL.revokeObjectURL(url);
+      e.target.value = ""; // permet de re-sélectionner le même fichier
+    });
 });

@@ -1,7 +1,7 @@
 /** Édition directe sur l’aperçu (zones cliquables). */
 import { $ } from "../core/dom.js";
 import { H, KEYS, W, ff } from "../core/config.js";
-import { state } from "../core/state.js";
+import { canvas, state } from "../core/state.js";
 
 const HIT_LABELS = {
   title: "le titre",
@@ -11,6 +11,7 @@ const HIT_LABELS = {
   desc: "la description",
   status: "le statut",
   idStr: "l’ID",
+  art: "l’illustration",
 };
 
 let inlineEd = null;
@@ -37,8 +38,15 @@ export function renderHitZones() {
     z.dataset.key = key;
     z.tabIndex = 0;
     z.setAttribute("role", "button");
-    z.setAttribute("aria-label", "Modifier " + HIT_LABELS[key]);
-    z.title = "Cliquer pour modifier " + HIT_LABELS[key];
+    const isArt = key === "art";
+    z.setAttribute(
+      "aria-label",
+      isArt ? "Ajouter une illustration" : "Modifier " + HIT_LABELS[key],
+    );
+    z.title = isArt
+      ? "Cliquer pour ajouter une illustration"
+      : "Cliquer pour modifier " + HIT_LABELS[key];
+    if (isArt) z.classList.add("hit-art");
     z.style.cssText =
       "left:" +
       (x / W) * 100 +
@@ -49,15 +57,21 @@ export function renderHitZones() {
       "%;height:" +
       (h / H) * 100 +
       "%";
-    z.onclick = () => openInlineEditor(key);
+    const activate = () =>
+      isArt ? $("npcArt").click() : openInlineEditor(key);
+    z.onclick = activate;
     z.onkeydown = (e) => {
       if (e.key === "Enter" || e.key === " ") {
         e.preventDefault();
-        openInlineEditor(key);
+        activate();
       }
     };
     layer.appendChild(z);
   });
+  // Avec une illustration, pas de zone par-dessus (le glisser / zoom du canvas reste actif).
+  canvas.title = state.art
+    ? "Double-clic : changer l’illustration · glisser : déplacer · Ctrl/⌘ + molette : zoom"
+    : "";
 }
 
 function openInlineEditor(key) {

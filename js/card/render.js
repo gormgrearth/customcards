@@ -214,6 +214,7 @@ export function draw(c, d, img) {
   shape(c, T, ax, ay, aw, ah, S.r);
   c.clip();
   let cv = null;
+  if (c === pctx) state.artFrame = { x: ax, y: ay, w: aw, h: ah };
   if (img) {
     // Taille (100 % = remplit le cadre) et position (50 % = centré) réglables.
     const zm = Math.max(0.5, Math.min(4, (Number(d.artZoom) || 100) / 100)),
@@ -232,7 +233,11 @@ export function draw(c, d, img) {
     cv = { s, sx: (ax - left) / s, sy: (ay - top) / s, sw: aw / s };
     if (c === pctx) state.artGeom = { aw, ah, dw, dh, k: W / c.canvas.width };
   } else {
-    if (c === pctx) state.artGeom = null;
+    if (c === pctx) {
+      state.artGeom = null;
+      // Illustration vierge : le cadre entier est cliquable (ajout d'une image).
+      state.HIT.art = { x: ax, y: ay, w: aw, h: ah };
+    }
     c.fillStyle = "#080c13";
     c.fillRect(ax, ay, aw, ah);
     c.strokeStyle = acc;
