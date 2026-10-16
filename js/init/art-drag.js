@@ -1,5 +1,6 @@
 /** Glisser-déposer de l’illustration sur l’aperçu. */
 import { $ } from "../core/dom.js";
+import { H, W } from "../core/config.js";
 import { canvas, state } from "../core/state.js";
 import { drawCurrent } from "../card/form.js";
 import { syncArtLabels } from "../card/art.js";
@@ -48,6 +49,18 @@ import { syncArtLabels } from "../card/art.js";
   };
   canvas.addEventListener("pointerup", end);
   canvas.addEventListener("pointercancel", end);
+  // Double-clic sur le cadre de l'illustration : choisir une autre image
+  // (cadrage, glisser et zoom restent disponibles ensuite).
+  canvas.addEventListener("dblclick", (e) => {
+    const f = state.artFrame;
+    if (!state.art || !f) return;
+    const r = canvas.getBoundingClientRect(),
+      x = ((e.clientX - r.left) / r.width) * W,
+      y = ((e.clientY - r.top) / r.height) * H;
+    if (x < f.x || x > f.x + f.w || y < f.y || y > f.y + f.h) return;
+    e.preventDefault();
+    $("npcArt").click();
+  });
   canvas.addEventListener(
     "wheel",
     (e) => {
