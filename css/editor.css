@@ -1,0 +1,128 @@
+.swatches {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+}
+.sw {
+  width: 30px;
+  height: 30px;
+  padding: 0;
+  border-radius: 50%;
+  border: 2px solid #0008;
+}
+.sw[aria-pressed="true"] {
+  outline: 3px solid #fff;
+  outline-offset: 2px;
+}
+input[type="color"] {
+  width: 34px;
+  height: 30px;
+  padding: 0;
+  border: 1px solid #5a6780;
+  border-radius: 6px;
+  background: none;
+}
+.sw.mini {
+  width: 20px;
+  height: 20px;
+}
+.chip {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 3px 4px 3px 5px;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  background: #0c1017;
+  font:
+    12px ui-monospace,
+    monospace;
+  color: var(--muted);
+}
+.chip .x {
+  width: 18px;
+  height: 18px;
+  padding: 0;
+  border-radius: 50%;
+  font-size: 12px;
+  line-height: 1;
+  border: 0;
+  background: none;
+  color: #ffa3ad;
+}
+.hint {
+  font-size: 12px;
+  color: var(--muted);
+}
+.card-shell {
+  position: relative;
+  width: min(100%, 390px);
+  aspect-ratio: 2.5/3.5;
+  margin: 8px auto 18px;
+  filter: drop-shadow(0 18px 28px #000a);
+}
+canvas {
+  width: 100%;
+  height: 100%;
+  display: block;
+  border-radius: 12px;
+}
+.hit-layer {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+.hit-zone {
+  position: absolute;
+  pointer-events: auto;
+  cursor: text;
+  border-radius: 6px;
+  outline: 2px dashed transparent;
+  outline-offset: 1px;
+  transition:
+    outline-color 0.12s,
+    background 0.12s;
+}
+.hit-zone:hover,
+.hit-zone:focus-visible {
+  outline-color: rgba(0, 240, 255, 0.85);
+  background: rgba(0, 240, 255, 0.1);
+}
+.inline-editor {
+  position: absolute;
+  z-index: 5;
+  box-sizing: border-box;
+  margin: 0;
+  padding: 4px 8px;
+  background: rgba(5, 8, 14, 0.96);
+  color: #fff;
+  border: 2px solid #00f0ff;
+  border-radius: 8px;
+  box-shadow: 0 6px 24px #000a;
+  outline: none;
+  resize: none;
+}
+.art-adjust {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: 8px 14px;
+  margin: 8px 0 4px;
+}
+.art-adjust .full {
+  grid-column: 1 / -1;
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  flex-wrap: wrap;
+}
+.art-adjust input[type="range"] {
+  width: 100%;
+  accent-color: #00f0ff;
+}
+#preview.art-draggable {
+  cursor: grab;
+}
+#preview.art-dragging {
+  cursor: grabbing;
+}

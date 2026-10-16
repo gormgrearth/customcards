@@ -1,0 +1,92 @@
+@media (max-width: 850px) {
+  main {
+    grid-template-columns: 1fr;
+  }
+  .workspace {
+    order: 2;
+  }
+  .editor {
+    order: 1;
+  }
+}
+select option {
+  background: #090c11;
+  color: var(--ink);
+  padding: 4px 8px;
+}
+select optgroup {
+  font:
+    700 12px system-ui,
+    sans-serif;
+  color: var(--ui);
+  background: #0d131d;
+  font-style: normal;
+}
+#fontT,
+#fontB {
+  font-size: 17px;
+}
+[hidden] {
+  display: none !important;
+}
+a {
+  color: var(--ui);
+}
+input[type="email"],
+input[type="password"] {
+  width: 100%;
+  background: #090c11;
+  color: var(--ink);
+  border: 1px solid #4a566b;
+  border-radius: 7px;
+  padding: 9px 10px;
+  font: inherit;
+}
+header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+.acct {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+.acct .hint.bad,
+#syncState.bad {
+  color: #ffa3ad;
+}
+dialog {
+  background: #131923;
+  color: var(--ink);
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  padding: 20px;
+  width: min(94vw, 460px);
+  max-height: 92vh;
+  overflow: auto;
+}
+dialog.wide {
+  width: min(96vw, 1000px);
+}
+dialog::backdrop {
+  background: #000b;
+}
+.share-row {
+  border: 1px solid #344155;
+  border-radius: 10px;
+  padding: 10px;
+  margin: 8px 0;
+  background: #0d131d;
+}
+.share-code {
+  font:
+    700 15px ui-monospace,
+    monospace;
+  color: var(--ui);
+  margin-top: 4px;
+  user-select: all;
+}
