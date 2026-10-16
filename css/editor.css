@@ -126,3 +126,32 @@ canvas {
 #preview.art-dragging {
   cursor: grabbing;
 }
+
+/* Illustration vierge : zone cliquable pour ajouter une image */
+.hit-zone.hit-art {
+  cursor: pointer;
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  padding-bottom: 12%;
+}
+.hit-zone.hit-art::after {
+  content: "+ Ajouter une illustration";
+  padding: 6px 12px;
+  border-radius: 999px;
+  background: rgba(8, 12, 19, 0.85);
+  color: #e8eef7;
+  font-size: 13px;
+  opacity: 0;
+  transition: opacity 0.12s;
+  pointer-events: none;
+}
+.hit-zone.hit-art:hover::after,
+.hit-zone.hit-art:focus-visible::after {
+  opacity: 1;
+}
+@media (hover: none) {
+  .hit-zone.hit-art::after {
+    opacity: 0.8;
+  }
+}
