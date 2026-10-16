@@ -2,13 +2,15 @@
 import { fw } from "../core/config.js";
 import { fitFont, mid, setLS, shape } from "../core/utils.js";
 import {
-  SHP,
   corners,
   dot,
   grain,
   gray,
   label,
+  para,
   rng,
+  SHP,
+  star4,
   star5,
   tint,
   vignette,
@@ -360,6 +362,207 @@ export const retro = {
       c.globalAlpha = 0.4;
       for (let x = px; x < px + pw; x += 14) c.fillRect(x, py + 8, 8, 2);
       c.globalAlpha = 1;
+    },
+  },
+  // ===== RÉTRO (+3 : lot 3) =====
+  memphis: {
+    frame(c, X) {
+      const { W, H, acc, alt } = X;
+      c.lineWidth = 8;
+      c.beginPath();
+      c.roundRect(22, 22, W - 44, H - 44, 26);
+      c.stroke();
+      const cols = [alt, "#FFE600", "#00F0FF", "#fff"],
+        r = rng(5);
+      for (let i = 0; i < 80; i++) {
+        const side = i % 4,
+          t = r(),
+          x =
+            side === 0
+              ? 40 + t * (W - 80)
+              : side === 1
+                ? 40 + t * (W - 80)
+                : side === 2
+                  ? 14
+                  : W - 14,
+          y = side === 0 ? 14 : side === 1 ? H - 14 : 40 + t * (H - 80);
+        c.fillStyle = cols[((i / 4) | 0) % cols.length];
+        c.strokeStyle = cols[((i / 4) | 0) % cols.length];
+        c.lineWidth = 3;
+        const k = i % 3;
+        if (k === 0) dot(c, x, y, 5);
+        else if (k === 1) {
+          c.beginPath();
+          c.moveTo(x - 6, y + 5);
+          c.lineTo(x, y - 6);
+          c.lineTo(x + 6, y + 5);
+          c.closePath();
+          c.fill();
+        } else {
+          c.beginPath();
+          c.moveTo(x - 8, y);
+          c.quadraticCurveTo(x - 4, y - 7, x, y);
+          c.quadraticCurveTo(x + 4, y + 7, x + 8, y);
+          c.stroke();
+        }
+      }
+    },
+    art(c, X) {
+      tint(c, X, "#ff5caa", 0.08);
+      c.save();
+      c.fillStyle = "#FFE600";
+      c.globalAlpha = 0.5;
+      c.beginPath();
+      c.moveTo(X.ax + 14, X.ay + 14);
+      c.lineTo(X.ax + 64, X.ay + 14);
+      c.lineTo(X.ax + 14, X.ay + 64);
+      c.closePath();
+      c.fill();
+      c.globalAlpha = 0.7;
+      c.fillStyle = "#00F0FF";
+      dot(c, X.ax + X.aw - 40, X.ay + X.ah - 280, 14);
+      c.restore();
+      vignette(c, X, 0.4);
+    },
+    title: (c, X, t) =>
+      label(c, X, t, {
+        sz: 28,
+        fill: "#FFE600",
+        stroke: X.acc,
+        lw: 4,
+        r: 10,
+        col: "#1a0a2e",
+        ls: 2,
+        pad: 76,
+        tx: 38,
+        h: 48,
+        y: 50,
+      }),
+    panel(c, X) {
+      const { px, py, pw, acc } = X;
+      c.strokeStyle = acc;
+      c.lineWidth = 4;
+      c.beginPath();
+      c.moveTo(px, py + 8);
+      for (let x = px; x < px + pw; x += 24) {
+        c.lineTo(x + 6, py + 2);
+        c.lineTo(x + 18, py + 14);
+        c.lineTo(x + 24, py + 8);
+      }
+      c.stroke();
+    },
+  },
+  pulp: {
+    shape: (c, x, y, w, h, r) => c.roundRect(x, y, w, h, Math.min(r, 6)),
+    frame(c, X) {
+      const { W, H, acc } = X;
+      c.lineWidth = 6;
+      c.strokeRect(20, 20, W - 40, H - 40);
+      c.strokeStyle = "#f3e2b8";
+      c.lineWidth = 1.5;
+      c.strokeRect(30, 30, W - 60, H - 60);
+      c.strokeStyle = acc;
+      c.lineWidth = 3;
+      corners(W, H, 14).forEach(([x, y, a, b]) => {
+        c.beginPath();
+        c.moveTo(x + a * 30, y);
+        c.lineTo(x, y);
+        c.lineTo(x, y + b * 30);
+        c.stroke();
+      });
+    },
+    art(c, X) {
+      tint(c, X, "#d9a441", 0.2);
+      c.save();
+      c.fillStyle = "rgba(0,0,0,.18)";
+      for (let y = X.ay + X.ah - 320; y < X.ay + X.ah; y += 12)
+        for (let x = X.ax + ((y / 12) % 2) * 6; x < X.ax + X.aw; x += 12)
+          dot(c, x, y, 1.6);
+      c.restore();
+      grain(c, X, 29, 800, 0.05);
+      vignette(c, X, 0.5);
+    },
+    title: (c, X, t) =>
+      label(c, X, t, {
+        sz: 30,
+        min: 16,
+        fill: X.acc,
+        stroke: "#1a1208",
+        lw: 3,
+        col: "#1a1208",
+        ls: 2,
+        pad: 76,
+        tx: 38,
+        h: 52,
+        y: 46,
+      }),
+    panel(c, X) {
+      const { px, py, pw } = X;
+      c.fillStyle = "#b3261e";
+      c.fillRect(px, py, pw, 8);
+      c.fillStyle = "#f3e2b8";
+      for (let x = px + 20; x < px + pw; x += 44) dot(c, x, py + 4, 2);
+    },
+  },
+  atomic: {
+    frame(c, X) {
+      const { W, H, acc } = X;
+      c.lineWidth = 5;
+      c.beginPath();
+      c.roundRect(18, 18, W - 36, H - 36, 32);
+      c.stroke();
+      c.lineWidth = 1.5;
+      c.globalAlpha = 0.5;
+      c.beginPath();
+      c.roundRect(29, 29, W - 58, H - 58, 24);
+      c.stroke();
+      c.globalAlpha = 1;
+      c.fillStyle = "#FF6B4A";
+      [...corners(W, H, 24), [W / 2, 18, 0, 0], [W / 2, H - 18, 0, 0]].forEach(
+        ([x, y]) => star4(c, x, y, 13),
+      );
+      c.fillStyle = acc;
+      [
+        [W / 4, 18],
+        [(3 * W) / 4, 18],
+        [W / 4, H - 18],
+        [(3 * W) / 4, H - 18],
+      ].forEach(([x, y]) => dot(c, x, y, 4));
+    },
+    art(c, X) {
+      tint(c, X, "#3dd6c0", 0.1);
+      c.save();
+      c.fillStyle = "#FF6B4A";
+      c.globalAlpha = 0.5;
+      [
+        [60, 120, 14],
+        [610, 250, 18],
+        [90, 420, 10],
+        [600, 560, 12],
+      ].forEach(([dx, dy, r]) => star4(c, X.ax + dx, X.ay + dy, r));
+      c.restore();
+      vignette(c, X, 0.42);
+    },
+    title: (c, X, t) =>
+      label(c, X, t, {
+        sz: 28,
+        fill: "#0b2b2b",
+        stroke: X.acc,
+        lw: 3,
+        col: "#FFD9B8",
+        ls: 1,
+        pad: 84,
+        tx: 44,
+        h: 48,
+        y: 50,
+        path: para(16),
+      }),
+    panel(c, X) {
+      const { px, py, pw, acc } = X;
+      c.fillStyle = acc;
+      c.fillRect(px, py, pw, 5);
+      c.fillStyle = "#FF6B4A";
+      [0, 1, 2].forEach((i) => dot(c, px + pw - 30 - i * 22, py + 18, 6));
     },
   },
 };

@@ -1,7 +1,6 @@
 /** Thèmes : Horreur. */
 import { shape } from "../core/utils.js";
 import {
-  SHP,
   corners,
   diamond,
   dot,
@@ -10,9 +9,12 @@ import {
   grain,
   gray,
   label,
+  leaf,
   lens,
   quarter,
   rng,
+  SHP,
+  sparkles,
   tint,
   vignette,
   web,
@@ -426,6 +428,199 @@ export const horreur = {
         c.fill();
       }
       c.globalAlpha = 1;
+    },
+  },
+  // ===== HORREUR (+3 : lot 3) =====
+  zombie: {
+    shape: (c, x, y, w, h, r) => c.roundRect(x, y, w, h, Math.min(r, 6)),
+    frame(c, X) {
+      const { W, H, acc } = X;
+      c.lineWidth = 3;
+      c.strokeRect(16, 32, W - 32, H - 64);
+      [14, H - 28].forEach((y) => {
+        c.save();
+        c.beginPath();
+        c.rect(14, y, W - 28, 14);
+        c.clip();
+        c.fillStyle = "#0b0c05";
+        c.fillRect(14, y, W - 28, 14);
+        c.fillStyle = acc;
+        for (let x = 0; x < W; x += 30) {
+          c.beginPath();
+          c.moveTo(x, y + 14);
+          c.lineTo(x + 15, y + 14);
+          c.lineTo(x + 30, y);
+          c.lineTo(x + 15, y);
+          c.closePath();
+          c.fill();
+        }
+        c.restore();
+      });
+      drips(c, 40, W - 40, 28, 13, 14, 46, "#7a0f0f");
+    },
+    art(c, X) {
+      tint(c, X, "#7aa11e", 0.16);
+      gray(c, X, 0.35);
+      grain(c, X, 7, 900, 0.06);
+      vignette(c, X, 0.62);
+    },
+    title: (c, X, t) =>
+      label(c, X, t, {
+        sz: 28,
+        min: 14,
+        fill: "#0b0c05",
+        stroke: X.acc,
+        lw: 3,
+        r: 4,
+        col: X.acc,
+        ls: 2,
+        pad: 76,
+        tx: 38,
+        h: 48,
+        y: 54,
+      }),
+    panel(c, X) {
+      const { px, py, pw } = X;
+      c.fillStyle = "#7a0f0f";
+      c.fillRect(px, py, pw, 6);
+      drips(c, px + 10, px + pw - 10, py + 4, 21, 6, 24, "#7a0f0f");
+    },
+  },
+  sorcellerie: {
+    frame(c, X) {
+      const { W, H, acc } = X;
+      c.lineWidth = 3;
+      c.strokeRect(18, 18, W - 36, H - 36);
+      c.globalAlpha = 0.45;
+      c.lineWidth = 1.5;
+      c.strokeRect(28, 28, W - 56, H - 56);
+      c.globalAlpha = 1;
+      c.lineWidth = 2;
+      corners(W, H, 26).forEach(([x, y]) => {
+        c.fillStyle = "#0a0412";
+        dot(c, x, y, 17);
+        c.beginPath();
+        c.arc(x, y, 17, 0, 7);
+        c.stroke();
+        c.beginPath();
+        for (let i = 0; i <= 5; i++) {
+          const a = -Math.PI / 2 + ((i * 2) % 5) * ((Math.PI * 2) / 5);
+          const px = x + Math.cos(a) * 14,
+            py = y + Math.sin(a) * 14;
+          i ? c.lineTo(px, py) : c.moveTo(px, py);
+        }
+        c.stroke();
+      });
+      c.fillStyle = acc;
+      [W / 2 - 50, W / 2, W / 2 + 50].forEach((x) => dot(c, x, H - 18, 3));
+    },
+    art(c, X) {
+      tint(c, X, "#6a2c91", 0.18);
+      sparkles(c, X, 19, 22, 0, X.ah - 20, "#e6d0ff");
+      c.save();
+      c.fillStyle = "#f4ecff";
+      c.globalAlpha = 0.85;
+      dot(c, X.ax + X.aw - 90, X.ay + 100, 30);
+      c.restore();
+      vignette(c, X, 0.58);
+    },
+    title: (c, X, t) =>
+      label(c, X, t, {
+        sz: 32,
+        min: 16,
+        fill: "rgba(12,4,22,.9)",
+        stroke: X.acc,
+        lw: 2.5,
+        r: 6,
+        col: X.acc,
+        tglow: X.acc,
+        glow: 10,
+        pad: 80,
+        tx: 40,
+        h: 48,
+        y: 50,
+      }),
+    panel(c, X) {
+      const { px, py, pw, acc } = X;
+      c.fillStyle = acc;
+      c.fillRect(px, py, pw, 3);
+      c.globalAlpha = 0.6;
+      [0.2, 0.5, 0.8].forEach((f) => {
+        dot(c, px + pw * f, py + 14, 3);
+        leaf(c, px + pw * f, py + 11, 12, 4, -Math.PI / 2);
+      });
+      c.globalAlpha = 1;
+    },
+  },
+  asile: {
+    shape: (c, x, y, w, h, r) => c.rect(x, y, w, h),
+    frame(c, X) {
+      const { W, H, acc } = X;
+      c.lineWidth = 3;
+      c.setLineDash([12, 8]);
+      c.strokeRect(20, 20, W - 40, H - 40);
+      c.setLineDash([]);
+      c.globalAlpha = 0.4;
+      c.lineWidth = 1.5;
+      c.strokeRect(30, 30, W - 60, H - 60);
+      c.globalAlpha = 1;
+      c.fillStyle = "rgba(217,210,182,.55)";
+      corners(W, H, 18).forEach(([x, y, a, b]) => {
+        c.save();
+        c.translate(x, y);
+        c.rotate(a * b * 0.7);
+        c.fillRect(-26, -9, 52, 18);
+        c.restore();
+      });
+    },
+    art(c, X) {
+      gray(c, X, 0.8);
+      grain(c, X, 3, 1300, 0.08);
+      const r = rng(88);
+      c.save();
+      c.strokeStyle = "rgba(255,255,255,.14)";
+      c.lineWidth = 1;
+      for (let i = 0; i < 16; i++) {
+        const x = X.ax + r() * X.aw,
+          y = X.ay + r() * X.ah;
+        c.beginPath();
+        c.moveTo(x, y);
+        c.lineTo(x + 20 + r() * 50, y + (r() - 0.5) * 30);
+        c.stroke();
+      }
+      c.restore();
+      vignette(c, X, 0.65);
+    },
+    title: (c, X, t) =>
+      label(c, X, t, {
+        sz: 26,
+        fill: "#d9d2b6",
+        stroke: "#000",
+        lw: 2,
+        col: "#111",
+        ls: 2,
+        pad: 100,
+        tx: 40,
+        h: 46,
+        y: 50,
+        deco: (c, x, y, w, h) => {
+          c.strokeStyle = "#b3261e";
+          c.lineWidth = 3;
+          c.strokeRect(x + w - 40, y + 8, 28, h - 16);
+        },
+      }),
+    panel(c, X) {
+      const { px, py, pw } = X;
+      c.strokeStyle = "rgba(217,210,182,.5)";
+      c.lineWidth = 2;
+      c.setLineDash([10, 8]);
+      c.beginPath();
+      c.moveTo(px, py + 8);
+      c.lineTo(px + pw, py + 8);
+      c.stroke();
+      c.setLineDash([]);
+      c.fillStyle = "#b3261e";
+      c.fillRect(px + pw - 30, py + 14, 14, 14);
     },
   },
 };

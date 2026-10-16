@@ -1,7 +1,7 @@
 /** Thèmes : Contemporain. */
 import { fw } from "../core/config.js";
 import { fitFont, mid, setLS, shape } from "../core/utils.js";
-import { SHP, dot, gray, label, tint, vignette } from "./helpers.js";
+import { dot, gray, label, para, SHP, tint, vignette } from "./helpers.js";
 
 export const contemporain = {
   urbain: {
@@ -296,6 +296,189 @@ export const contemporain = {
       c.bezierCurveTo(10, -24, 20, -8, 0, 8);
       c.fill();
       c.restore();
+    },
+  },
+  // ===== CONTEMPORAIN (+3 : lot 3) =====
+  medical: {
+    frame(c, X) {
+      const { W, H, acc } = X;
+      c.lineWidth = 4;
+      c.beginPath();
+      c.roundRect(16, 16, W - 32, H - 32, 28);
+      c.stroke();
+      c.globalAlpha = 0.35;
+      c.lineWidth = 1.5;
+      c.beginPath();
+      c.roundRect(27, 27, W - 54, H - 54, 20);
+      c.stroke();
+      c.globalAlpha = 1;
+      c.fillStyle = acc;
+      [W / 2 - 80, W / 2, W / 2 + 80].forEach((x) => {
+        c.fillRect(x - 8, H - 21, 16, 4);
+        c.fillRect(x - 2, H - 27, 4, 16);
+      });
+    },
+    art(c, X) {
+      tint(c, X, "#d8ffff", 0.06);
+      vignette(c, X, 0.38);
+    },
+    title: (c, X, t) =>
+      label(c, X, t, {
+        sz: 24,
+        fill: "rgba(8,32,34,.92)",
+        stroke: X.acc,
+        lw: 2.5,
+        r: 14,
+        col: "#EAFFFD",
+        pad: 100,
+        tx: 62,
+        h: 46,
+        y: 50,
+        deco: (c, x, y, w, h) => {
+          c.fillStyle = X.acc;
+          c.fillRect(x + 18, y + h / 2 - 3, 20, 6);
+          c.fillRect(x + 25, y + h / 2 - 10, 6, 20);
+        },
+      }),
+    panel(c, X) {
+      const { px, py, pw, acc } = X;
+      c.fillStyle = acc;
+      c.fillRect(px, py, pw, 6);
+      c.strokeStyle = acc;
+      c.globalAlpha = 0.5;
+      c.lineWidth = 2;
+      c.beginPath();
+      c.moveTo(px + pw - 220, py + 22);
+      [
+        [30, 0],
+        [40, -8],
+        [52, 12],
+        [64, -14],
+        [76, 8],
+        [90, 0],
+        [220, 0],
+      ].forEach(([dx, dy]) => c.lineTo(px + pw - 220 + dx, py + 22 + dy));
+      c.stroke();
+      c.globalAlpha = 1;
+    },
+  },
+  startup: {
+    frame(c, X) {
+      const { W, H, acc, alt } = X;
+      const g = c.createLinearGradient(0, 0, W, H);
+      g.addColorStop(0, acc);
+      g.addColorStop(1, alt);
+      c.strokeStyle = g;
+      c.lineWidth = 6;
+      c.beginPath();
+      c.roundRect(16, 16, W - 32, H - 32, 34);
+      c.stroke();
+      c.lineWidth = 1.5;
+      c.globalAlpha = 0.5;
+      c.beginPath();
+      c.roundRect(28, 28, W - 56, H - 56, 24);
+      c.stroke();
+      c.globalAlpha = 1;
+    },
+    art(c, X) {
+      tint(c, X, "#7c5cff", 0.1);
+      c.save();
+      c.fillStyle = "#fff";
+      c.globalAlpha = 0.18;
+      for (let i = 0; i < 5; i++)
+        for (let j = 0; j < 5; j++)
+          dot(c, X.ax + X.aw - 100 + i * 16, X.ay + 24 + j * 16, 2);
+      c.restore();
+      vignette(c, X, 0.42);
+    },
+    title: (c, X, t) => {
+      const g = c.createLinearGradient(48, 0, 600, 0);
+      g.addColorStop(0, X.acc);
+      g.addColorStop(1, X.alt);
+      label(c, X, t, {
+        sz: 24,
+        fill: g,
+        r: 24,
+        col: "#fff",
+        ls: 1,
+        pad: 76,
+        tx: 38,
+        h: 46,
+        y: 50,
+      });
+    },
+    panel(c, X) {
+      const { px, py, pw, acc, alt } = X;
+      const g = c.createLinearGradient(px, 0, px + pw, 0);
+      g.addColorStop(0, acc);
+      g.addColorStop(1, alt);
+      c.fillStyle = g;
+      c.fillRect(px, py, pw, 5);
+    },
+  },
+  stade: {
+    frame(c, X) {
+      const { W, H, acc } = X;
+      c.lineWidth = 10;
+      c.strokeRect(20, 20, W - 40, H - 40);
+      c.strokeStyle = "#fff";
+      c.lineWidth = 2;
+      c.globalAlpha = 0.7;
+      c.strokeRect(31, 31, W - 62, H - 62);
+      c.globalAlpha = 1;
+      c.fillStyle = acc;
+      for (let x = 60; x < W - 60; x += 56) {
+        c.beginPath();
+        c.moveTo(x, H - 14);
+        c.lineTo(x + 18, H - 14);
+        c.lineTo(x + 28, H - 26);
+        c.lineTo(x + 10, H - 26);
+        c.closePath();
+        c.fill();
+      }
+    },
+    art(c, X) {
+      tint(c, X, "#ffb300", 0.08);
+      c.save();
+      c.strokeStyle = "rgba(255,255,255,.07)";
+      c.lineWidth = 14;
+      for (let i = -X.ah; i < X.aw; i += 60) {
+        c.beginPath();
+        c.moveTo(X.ax + i, X.ay + X.ah);
+        c.lineTo(X.ax + i + X.ah, X.ay);
+        c.stroke();
+      }
+      c.restore();
+      vignette(c, X, 0.5);
+    },
+    title: (c, X, t) =>
+      label(c, X, t, {
+        sz: 34,
+        min: 18,
+        fill: X.acc,
+        col: "#111",
+        ls: 2,
+        pad: 76,
+        tx: 40,
+        h: 50,
+        y: 48,
+        path: para(18),
+      }),
+    panel(c, X) {
+      const { px, py, pw, acc } = X;
+      c.fillStyle = acc;
+      c.fillRect(px, py, pw, 6);
+      c.globalAlpha = 0.5;
+      for (let x = px + 10; x < px + pw; x += 34) {
+        c.beginPath();
+        c.moveTo(x, py + 6);
+        c.lineTo(x + 12, py + 6);
+        c.lineTo(x + 20, py + 16);
+        c.lineTo(x + 8, py + 16);
+        c.closePath();
+        c.fill();
+      }
+      c.globalAlpha = 1;
     },
   },
 };

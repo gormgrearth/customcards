@@ -2,9 +2,10 @@
 import { fw } from "../core/config.js";
 import { fitFont, mid, setLS, shape } from "../core/utils.js";
 import {
-  SHP,
   corners,
+  diamond,
   dot,
+  grain,
   gray,
   hexPath,
   label,
@@ -12,7 +13,10 @@ import {
   noGlow,
   quarter,
   rng,
+  SHP,
+  sparkles,
   tint,
+  vignette,
 } from "./helpers.js";
 
 export const futuriste = {
@@ -479,6 +483,191 @@ export const futuriste = {
       c.stroke();
       c.fillStyle = acc;
       for (let x = px + 20; x < px + pw - 20; x += 18) c.fillRect(x, py, 12, 5);
+    },
+  },
+  // ===== FUTURISTE (+3 : lot 3) =====
+  cryo: {
+    shape: SHP.cham,
+    frame(c, X) {
+      const { W, H, acc } = X;
+      c.lineWidth = 3;
+      c.strokeRect(16, 16, W - 32, H - 32);
+      c.globalAlpha = 0.4;
+      c.lineWidth = 1.5;
+      c.strokeRect(27, 27, W - 54, H - 54);
+      c.globalAlpha = 0.9;
+      c.fillStyle = acc;
+      corners(W, H, 16).forEach(([x, y, a, b]) => {
+        c.beginPath();
+        c.moveTo(x, y);
+        c.lineTo(x + a * 64, y);
+        c.lineTo(x + a * 30, y + b * 12);
+        c.lineTo(x + a * 14, y + b * 40);
+        c.lineTo(x, y + b * 64);
+        c.closePath();
+        c.fill();
+      });
+      c.globalAlpha = 1;
+    },
+    art(c, X) {
+      tint(c, X, "#bfefff", 0.12);
+      const g = c.createRadialGradient(
+        X.W / 2,
+        X.ay + X.ah * 0.45,
+        260,
+        X.W / 2,
+        X.ay + X.ah * 0.45,
+        640,
+      );
+      g.addColorStop(0, "rgba(220,245,255,0)");
+      g.addColorStop(1, "rgba(220,245,255,.4)");
+      c.fillStyle = g;
+      c.fillRect(X.ax, X.ay, X.aw, X.ah);
+      sparkles(c, X, 12, 18, 0, X.ah - 20, "#ffffff");
+    },
+    title: (c, X, t) =>
+      label(c, X, t, {
+        sz: 26,
+        fill: "rgba(4,26,38,.9)",
+        stroke: X.acc,
+        lw: 2.5,
+        col: "#E6FAFF",
+        glow: 10,
+        pad: 80,
+        tx: 40,
+        h: 46,
+        y: 50,
+        path: (c, x, y, w, h) => {
+          c.beginPath();
+          SHP.cham(c, x, y, w, h, 12);
+        },
+      }),
+    panel(c, X) {
+      const { px, py, pw, acc } = X;
+      const g = c.createLinearGradient(px, 0, px + pw, 0);
+      g.addColorStop(0, acc);
+      g.addColorStop(1, "rgba(155,231,255,.15)");
+      c.fillStyle = g;
+      c.fillRect(px, py, pw, 5);
+      c.globalAlpha = 0.5;
+      for (let i = 0; i < 6; i++) diamond(c, px + pw - 24 - i * 22, py + 20, 5);
+      c.globalAlpha = 1;
+    },
+  },
+  colonie: {
+    shape: SHP.cham,
+    frame(c, X) {
+      const { W, H, acc } = X;
+      c.lineWidth = 3;
+      c.strokeRect(16, 30, W - 32, H - 60);
+      [14, H - 28].forEach((y) => {
+        c.save();
+        c.beginPath();
+        c.rect(14, y, W - 28, 14);
+        c.clip();
+        c.fillStyle = "#1a0a04";
+        c.fillRect(14, y, W - 28, 14);
+        c.fillStyle = acc;
+        for (let x = 0; x < W; x += 28) {
+          c.beginPath();
+          c.moveTo(x, y + 14);
+          c.lineTo(x + 14, y + 14);
+          c.lineTo(x + 28, y);
+          c.lineTo(x + 14, y);
+          c.closePath();
+          c.fill();
+        }
+        c.restore();
+      });
+    },
+    art(c, X) {
+      tint(c, X, "#ff6a2b", 0.14);
+      grain(c, X, 61, 900, 0.05);
+      vignette(c, X, 0.55);
+    },
+    title: (c, X, t) =>
+      label(c, X, t, {
+        sz: 26,
+        fill: "#2a1308",
+        stroke: X.acc,
+        lw: 3,
+        col: X.acc,
+        pad: 80,
+        tx: 40,
+        h: 46,
+        y: 52,
+        path: (c, x, y, w, h) => {
+          c.beginPath();
+          SHP.cham(c, x, y, w, h, 10);
+        },
+      }),
+    panel(c, X) {
+      const { px, py, ph, acc } = X;
+      c.fillStyle = acc;
+      c.fillRect(px, py, 8, ph);
+      c.globalAlpha = 0.5;
+      [18, ph - 18].forEach((dy) => dot(c, px + 20, py + dy, 3));
+      c.globalAlpha = 1;
+    },
+  },
+  nexus: {
+    shape: (c, x, y, w, h, r) => c.roundRect(x, y, w, h, [r, 4, r, 4]),
+    frame(c, X) {
+      const { W, H, acc } = X;
+      c.lineWidth = 2;
+      c.globalAlpha = 0.55;
+      c.strokeRect(14, 14, W - 28, H - 28);
+      c.globalAlpha = 1;
+      c.lineWidth = 3;
+      corners(W, H, 14).forEach(([x, y, a, b]) => {
+        c.beginPath();
+        c.moveTo(x + a * 90, y);
+        c.lineTo(x + a * 40, y);
+        c.lineTo(x, y + b * 40);
+        c.lineTo(x, y + b * 90);
+        c.stroke();
+        c.fillStyle = acc;
+        dot(c, x + a * 40, y, 4);
+        dot(c, x, y + b * 40, 4);
+      });
+    },
+    art(c, X) {
+      tint(c, X, "#8a5cff", 0.12);
+      c.save();
+      c.beginPath();
+      c.rect(X.ax, X.ay, X.aw, X.ah);
+      c.clip();
+      c.strokeStyle = X.acc;
+      c.globalAlpha = 0.07;
+      c.lineWidth = 1;
+      for (let j = 0; j < 14; j++)
+        for (let i = 0; i < 9; i++) {
+          c.beginPath();
+          hexPath(c, X.ax + 20 + i * 78 + (j % 2) * 39, X.ay + 20 + j * 68, 38);
+          c.stroke();
+        }
+      c.restore();
+      vignette(c, X, 0.5);
+    },
+    title: (c, X, t) =>
+      label(c, X, t, {
+        sz: 24,
+        fill: "rgba(14,8,34,.9)",
+        stroke: X.acc,
+        lw: 2.5,
+        col: "#fff",
+        glow: 12,
+        pad: 84,
+        tx: 42,
+        h: 46,
+        y: 50,
+        path: lens(14),
+      }),
+    panel(c, X) {
+      const { px, py, pw, acc } = X;
+      c.fillStyle = acc;
+      c.fillRect(px, py, pw, 3);
+      for (let i = 0; i < 5; i++) dot(c, px + 24 + i * 22, py + 16, 3);
     },
   },
 };

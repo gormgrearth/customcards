@@ -1,4 +1,5 @@
 /** Assemblage des dessins de thèmes par catégorie. */
+import { cyberpunk } from "./cyberpunk.js";
 import { medieval } from "./medieval.js";
 import { fantastique } from "./fantastique.js";
 import { contemporain } from "./contemporain.js";
@@ -8,6 +9,7 @@ import { horreur } from "./horreur.js";
 
 export const EXTRA = Object.assign(
   {},
+  cyberpunk,
   medieval,
   fantastique,
   contemporain,

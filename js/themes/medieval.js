@@ -5,8 +5,10 @@ import {
   corners,
   diamond,
   dot,
+  grain,
   gray,
   label,
+  SHP,
   tint,
   vignette,
 } from "./helpers.js";
@@ -336,6 +338,175 @@ export const medieval = {
       c.fillRect(px, py + 10, pw, 2);
       dot(c, px + 12, py + 5, 3);
       dot(c, px + pw - 12, py + 5, 3);
+    },
+  },
+  // ===== MÉDIÉVAL (+3 : lot 3) =====
+  chevalier: {
+    shape: SHP.cham,
+    frame(c, X) {
+      const { W, H, acc } = X;
+      c.strokeStyle = "#7d8798";
+      c.lineWidth = 14;
+      c.strokeRect(22, 22, W - 44, H - 44);
+      c.strokeStyle = "#2a3140";
+      c.lineWidth = 2;
+      c.strokeRect(14, 14, W - 28, H - 28);
+      c.strokeRect(30, 30, W - 60, H - 60);
+      c.strokeStyle = acc;
+      c.globalAlpha = 0.6;
+      c.lineWidth = 1.5;
+      c.strokeRect(36, 36, W - 72, H - 72);
+      c.globalAlpha = 1;
+      c.fillStyle = "#c9d3e3";
+      [
+        ...corners(W, H, 22),
+        [W / 2, 22, 0, 0],
+        [W / 2, H - 22, 0, 0],
+        [22, H / 2, 0, 0],
+        [W - 22, H / 2, 0, 0],
+      ].forEach(([x, y]) => dot(c, x, y, 5));
+    },
+    art(c, X) {
+      tint(c, X, "#8ea0b8", 0.1);
+      vignette(c, X, 0.5);
+    },
+    title: (c, X, t) =>
+      label(c, X, t, {
+        sz: 26,
+        fill: "#1b2230",
+        stroke: X.acc,
+        lw: 3,
+        col: "#E8EDF5",
+        pad: 80,
+        tx: 40,
+        h: 46,
+        y: 50,
+        path: (c, x, y, w, h) => {
+          c.beginPath();
+          SHP.cham(c, x, y, w, h, 12);
+        },
+        deco: (c, x, y, w, h) => {
+          c.fillStyle = X.acc;
+          dot(c, x + 16, y + h / 2, 4);
+          dot(c, x + w - 16, y + h / 2, 4);
+        },
+      }),
+    panel(c, X) {
+      const { px, py, pw } = X;
+      c.fillStyle = "#4b5568";
+      c.fillRect(px, py, pw, 10);
+      c.fillStyle = "#c9d3e3";
+      for (let x = px + 30; x < px + pw - 10; x += 60) dot(c, x, py + 5, 2.5);
+    },
+  },
+  scriptorium: {
+    frame(c, X) {
+      const { W, H, acc } = X;
+      c.lineWidth = 4;
+      c.strokeRect(18, 18, W - 36, H - 36);
+      c.lineWidth = 1.5;
+      c.strokeRect(27, 27, W - 54, H - 54);
+      c.fillStyle = acc;
+      corners(W, H, 22).forEach(([x, y]) => diamond(c, x, y, 9));
+      c.fillStyle = "#9b2c2c";
+      corners(W, H, 22).forEach(([x, y]) => diamond(c, x, y, 4));
+      c.fillStyle = acc;
+      [W / 2, W / 2 - 60, W / 2 + 60].forEach((x) => {
+        dot(c, x, 18, 3);
+        dot(c, x, H - 18, 3);
+      });
+    },
+    art(c, X) {
+      tint(c, X, "#b98a4e", 0.18);
+      grain(c, X, 17, 700, 0.05);
+      vignette(c, X, 0.5);
+    },
+    title: (c, X, t) =>
+      label(c, X, t, {
+        sz: 26,
+        fill: "#2a1d10",
+        stroke: X.acc,
+        lw: 2,
+        col: X.acc,
+        ls: 2,
+        pad: 96,
+        tx: 56,
+        h: 46,
+        y: 50,
+        deco: (c, x, y, w, h) => {
+          c.fillStyle = "#9b2c2c";
+          c.fillRect(x + 10, y + 9, 28, h - 18);
+          c.fillStyle = "#f3e2b8";
+          c.fillRect(x + 20, y + 15, 8, h - 30);
+        },
+      }),
+    panel(c, X) {
+      const { px, py, pw, acc } = X;
+      c.fillStyle = acc;
+      c.fillRect(px, py + 6, pw, 1.5);
+      c.fillRect(px, py + 12, pw, 1.5);
+      diamond(c, px + pw / 2, py + 9, 7);
+    },
+  },
+  royaume: {
+    frame(c, X) {
+      const { W, H, acc } = X;
+      c.lineWidth = 8;
+      c.strokeRect(22, 22, W - 44, H - 44);
+      c.lineWidth = 1.5;
+      c.strokeRect(14, 14, W - 28, H - 28);
+      c.strokeRect(32, 32, W - 64, H - 64);
+      c.fillStyle = acc;
+      // couronne en haut au centre
+      const cx = W / 2,
+        cy = 30;
+      c.beginPath();
+      c.moveTo(cx - 34, cy + 10);
+      c.lineTo(cx - 40, cy - 12);
+      c.lineTo(cx - 20, cy - 2);
+      c.lineTo(cx, cy - 18);
+      c.lineTo(cx + 20, cy - 2);
+      c.lineTo(cx + 40, cy - 12);
+      c.lineTo(cx + 34, cy + 10);
+      c.closePath();
+      c.fill();
+      c.fillStyle = "#2a0b14";
+      dot(c, cx, cy + 2, 3);
+      c.fillStyle = acc;
+      [
+        [22, 22],
+        [W - 22, 22],
+        [22, H - 22],
+        [W - 22, H - 22],
+      ].forEach(([x, y]) => diamond(c, x, y, 9));
+    },
+    art(c, X) {
+      tint(c, X, "#7a1f2b", 0.15);
+      vignette(c, X, 0.55);
+    },
+    title: (c, X, t) =>
+      label(c, X, t, {
+        sz: 24,
+        fill: "#3a0f1a",
+        stroke: X.acc,
+        lw: 3,
+        r: 8,
+        col: X.acc,
+        center: true,
+        pad: 90,
+        h: 44,
+        y: 66,
+        deco: (c, x, y, w, h) => {
+          c.fillStyle = X.acc;
+          diamond(c, x + 14, y + h / 2, 5);
+          diamond(c, x + w - 14, y + h / 2, 5);
+        },
+      }),
+    panel(c, X) {
+      const { px, py, pw, acc } = X;
+      c.fillStyle = acc;
+      c.fillRect(px, py, pw, 5);
+      for (let x = px + 20; x < px + pw; x += 40) dot(c, x, py + 14, 2);
     },
   },
 };
