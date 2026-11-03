@@ -4,6 +4,7 @@ import { H, W } from "../core/config.js";
 import { state } from "../core/state.js";
 import { getImg, setStatus, slug } from "../core/utils.js";
 import { draw } from "../card/render.js";
+import { TOKEN_SIZE, drawToken, tokenImageOf } from "../token/render.js";
 
 export async function exportCard(d) {
   const c = document.createElement("canvas");
@@ -11,8 +12,24 @@ export async function exportCard(d) {
   c.height = H;
   draw(c.getContext("2d"), d, await getImg(d.artData));
   const a = document.createElement("a");
-  a.download = "card_npc_" + slug(d.name) + ".jpg";
+  // suffixe « -cfd » : carte exportée en version confidentielle
+  a.download =
+    "card_npc_" + slug(d.name) + (state.confidentialMode ? "-cfd" : "") + ".jpg";
   a.href = c.toDataURL("image/jpeg", 0.94);
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+}
+
+/** Token en PNG (fond transparent) ; fichier suffixé « -tkn ». */
+export async function exportToken(d) {
+  const c = document.createElement("canvas");
+  c.width = TOKEN_SIZE;
+  c.height = TOKEN_SIZE;
+  drawToken(c.getContext("2d"), d, await tokenImageOf(d));
+  const a = document.createElement("a");
+  a.download = "card_npc_" + slug(d.name) + "-tkn.png";
+  a.href = c.toDataURL("image/png");
   document.body.appendChild(a);
   a.click();
   a.remove();

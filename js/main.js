@@ -21,6 +21,7 @@ import "./init/ui-setup.js";
 import { openShared } from "./cloud/shared-view.js";
 import "./init/form-events.js";
 import "./init/art-drag.js";
+import "./token/token-drag.js";
 import "./init/folder-events.js";
 
 (async () => {

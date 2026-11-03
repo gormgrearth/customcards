@@ -130,6 +130,10 @@ export async function cloudPull() {
       const p = await prepImage(c.artData);
       if (p) have.set(p.hash, p.data);
     }
+    if (c.tokenArtData) {
+      const p = await prepImage(c.tokenArtData);
+      if (p) have.set(p.hash, p.data);
+    }
     if (c.backArtData) {
       const p = await prepImage(c.backArtData);
       if (p) have.set(p.hash, p.data);
@@ -143,6 +147,7 @@ export async function cloudPull() {
   byId.forEach((d) => {
     if (d.artHash) need.add(d.artHash);
     if (d.backHash) need.add(d.backHash);
+    if (d.tokenHash) need.add(d.tokenHash);
   });
   (meta.backs || []).forEach((b) => need.add(b.hash));
   const missing = [...need].filter((h) => !have.has(h));

@@ -4,6 +4,8 @@ import { THEMES } from "../themes/meta.js";
 
 export const canvas = $("preview");
 export const pctx = canvas.getContext("2d");
+export const tcanvas = $("tokenPreview");
+export const tctx = tcanvas.getContext("2d");
 export const imgCache = new Map();
 
 export const state = {
@@ -12,6 +14,9 @@ export const state = {
   editingId: null,
   art: null,
   artData: null,
+  tokenArt: null, // image distincte du token (si choisie)
+  tokenArtData: null,
+  tokenGeom: null, // géométrie de l'image dans l'aperçu du token (pour le glisser)
   color: THEMES.standard.color,
   customColors: [],
   confidentialMode: false,

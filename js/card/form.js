@@ -10,6 +10,7 @@ import { draw } from "./render.js";
 import { setArtAdjust } from "./art.js";
 import { setColor, trackColor } from "./colors.js";
 import { renderHitZones } from "./inline-editor.js";
+import { drawTokenPreview, readToken, writeToken } from "../token/token-ui.js";
 import { renderLibrary } from "../library/library.js";
 import { schedulePrefs } from "../cloud/local.js";
 
@@ -29,6 +30,7 @@ export function read() {
     artX: Number($("artX").value),
     artY: Number($("artY").value),
   };
+  Object.assign(d, readToken());
   for (const k in KEYS) d[k] = $(KEYS[k]).value.trim();
   d.name = d.name || "Nouveau PNJ";
   return d;
@@ -45,6 +47,7 @@ export function write(d) {
   $("npcOpacity").value = d.opacity ?? 88;
   $("opacityValue").textContent = $("npcOpacity").value + " %";
   setArtAdjust(d.artZoom, d.artX, d.artY);
+  writeToken(d);
   setColor(d.color);
 }
 
@@ -56,7 +59,9 @@ const syncFontPreview = () =>
 
 export const drawCurrent = () => {
   syncFontPreview();
-  draw(pctx, read(), state.art);
+  const d = read();
+  draw(pctx, d, state.art);
+  drawTokenPreview(d);
   renderHitZones();
   canvas.classList.toggle("art-draggable", !!(state.art && state.artGeom));
   schedulePrefs();
@@ -80,6 +85,9 @@ export function fresh() {
   state.art = null;
   state.artData = null;
   state.backArtData = null;
+  state.tokenArt = null;
+  state.tokenArtData = null;
+  $("tokenFile").value = "";
   $("backArtFile").value = "";
   $("npcArt").value = "";
   write({
@@ -89,6 +97,7 @@ export function fresh() {
     fontB: previous.fontB || THEMES[previous.theme || "standard"].fB,
     color: previous.color || THEMES[previous.theme || "standard"].color,
     opacity: previous.opacity ?? 88,
+    tokenRing: previous.tokenRing,
     status: "Actif",
     idOn: true,
     idStr: genId(),
@@ -103,6 +112,8 @@ export async function loadCard(id) {
   state.editingId = id;
   state.artData = d.artData || null;
   state.art = await getImg(state.artData);
+  state.tokenArtData = d.tokenArtData || null;
+  state.tokenArt = await getImg(state.tokenArtData);
   write(d);
   $("npcArt").value = "";
   $("saveBtn").textContent = "✓ Enregistrer les modifications";

@@ -7,7 +7,7 @@ import { genId, setStatus } from "../core/utils.js";
 import { applyTheme, drawCurrent, fresh, read, save } from "../card/form.js";
 import { setArtAdjust, syncArtLabels } from "../card/art.js";
 import { renderLibrary } from "../library/library.js";
-import { exportBackCard, exportCard } from "../library/export.js";
+import { exportBackCard, exportCard, exportToken } from "../library/export.js";
 
 $("npcTheme").addEventListener("change", applyTheme);
 
@@ -68,3 +68,5 @@ $("confidentialMode").addEventListener("change", async (e) => {
 $("exportCurrent").onclick = () => exportCard(read());
 
 $("exportBackCurrent").onclick = () => exportBackCard(read());
+
+$("exportTokenCurrent").onclick = () => exportToken(read());

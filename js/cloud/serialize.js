@@ -5,13 +5,20 @@ import { prepImage } from "./images.js";
 
 // Une carte « cloud » = métadonnées + références d'images (les images sont des documents séparés, dédupliqués par empreinte)
 export async function cardDoc(c, noBack) {
-  const { artData, backArtData, ...rest } = c,
+  const { artData, backArtData, tokenArtData, ...rest } = c,
     images = {},
     doc = { ...rest };
   if (artData) {
     const p = await prepImage(artData);
     if (p) {
       doc.artHash = p.hash;
+      images[p.hash] = p.data;
+    }
+  }
+  if (tokenArtData) {
+    const p = await prepImage(tokenArtData);
+    if (p) {
+      doc.tokenHash = p.hash;
       images[p.hash] = p.data;
     }
   }
@@ -30,8 +37,9 @@ export async function cardDoc(c, noBack) {
 }
 
 export function rebuildCard(doc, imgOf) {
-  const { artHash, backHash, backStyle, ...c } = doc;
+  const { artHash, backHash, backStyle, tokenHash, ...c } = doc;
   if (artHash) c.artData = imgOf(artHash) || null;
+  if (tokenHash) c.tokenArtData = imgOf(tokenHash) || null;
   if (backStyle)
     c.backArtData =
       (BACK_STYLES.find((x) => x.name === backStyle) || {}).data || null;

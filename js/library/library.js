@@ -13,7 +13,7 @@ import {
 } from "./folders.js";
 import { openZoom } from "./zoom.js";
 import { copyVisualProps, pasteVisualProps } from "./props-clipboard.js";
-import { exportCard } from "./export.js";
+import { exportCard, exportToken } from "./export.js";
 
 export async function renderLibrary() {
   renderFolders();
@@ -142,6 +142,7 @@ export async function renderLibrary() {
       b("⚙", "Options / modifier la carte", () => loadCard(d.id)),
       copyBtn,
       b("⇩", "Exporter en JPG", () => exportCard(d)),
+      b("◉", "Exporter le token en PNG", () => exportToken(d)),
       pasteBtn,
       b(
         "×",

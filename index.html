@@ -14,6 +14,7 @@
     <link rel="stylesheet" href="css/editor.css" />
     <link rel="stylesheet" href="css/library.css" />
     <link rel="stylesheet" href="css/backs.css" />
+    <link rel="stylesheet" href="css/token.css" />
     <link rel="stylesheet" href="css/responsive-dialogs.css" />
   </head>
   <body>
@@ -90,6 +91,64 @@
             >
           </div>
         </div>
+        <fieldset class="token-box" id="tokenBox">
+          <legend>Token</legend>
+          <div class="token-src">
+            <label
+              ><input
+                type="radio"
+                name="tokenSource"
+                id="tokenSrcCard"
+                value="card"
+                checked
+              />
+              Même illustration que la carte</label
+            >
+            <label
+              ><input
+                type="radio"
+                name="tokenSource"
+                id="tokenSrcCustom"
+                value="custom"
+              />
+              Image distincte</label
+            >
+          </div>
+          <div id="tokenFileRow" hidden>
+            <input id="tokenFile" type="file" accept="image/*" />
+          </div>
+          <p class="hint" id="tokenFileHint" style="margin: 6px 0 0"></p>
+          <div class="art-adjust">
+            <div>
+              <label for="tokenZoom"
+                >Taille : <span id="tokenZoomValue">100 %</span></label
+              ><input
+                id="tokenZoom"
+                type="range"
+                min="50"
+                max="400"
+                value="100"
+              />
+            </div>
+            <div>
+              <label for="tokenX"
+                >Position horizontale :
+                <span id="tokenXValue">50 %</span></label
+              ><input id="tokenX" type="range" min="0" max="100" value="50" />
+            </div>
+            <div>
+              <label for="tokenY"
+                >Position verticale :
+                <span id="tokenYValue">50 %</span></label
+              ><input id="tokenY" type="range" min="0" max="100" value="50" />
+            </div>
+            <div class="full">
+              <button type="button" id="tokenReset">Recentrer le token</button>
+            </div>
+          </div>
+          <label for="tokenRing">Anneau</label>
+          <select id="tokenRing"></select>
+        </fieldset>
         <div class="back-editor">
           <h2>Face arrière</h2>
           <p class="hint">
@@ -200,16 +259,38 @@
           >
           <p class="hint" style="margin: 5px 0 12px">
             Ce réglage général s’applique à l’aperçu, à toute la bibliothèque et
-            aux exports JPG.
+            aux exports JPG (les fichiers exportés en mode confidentiel portent
+            le suffixe « -cfd »).
           </p>
-          <div class="card-shell">
-            <canvas
-              id="preview"
-              width="750"
-              height="1050"
-              aria-label="Aperçu de la carte"
-            ></canvas>
-            <div id="hitLayer" class="hit-layer"></div>
+          <div class="preview-stage">
+            <div class="card-col">
+              <div class="card-shell">
+                <canvas
+                  id="preview"
+                  width="750"
+                  height="1050"
+                  aria-label="Aperçu de la carte"
+                ></canvas>
+                <div id="hitLayer" class="hit-layer"></div>
+              </div>
+            </div>
+            <aside class="token-col" aria-label="Token">
+              <h3>Token</h3>
+              <div class="token-shell">
+                <canvas
+                  id="tokenPreview"
+                  width="512"
+                  height="512"
+                  aria-label="Aperçu du token"
+                ></canvas>
+              </div>
+              <p class="hint">
+                Glissez pour cadrer, Ctrl/⌘ + molette pour redimensionner.
+              </p>
+              <button id="exportTokenCurrent" type="button">
+                Exporter le token en PNG
+              </button>
+            </aside>
           </div>
           <p class="hint" style="text-align: center; margin: -6px 0 12px">
             Cliquez sur un élément de la carte (titre, nom, rôle, faction,
