@@ -74,3 +74,53 @@
 .token-box .art-adjust {
   margin-top: 10px;
 }
+
+/* Bibliothèque d'anneaux */
+.ring-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(128px, 1fr));
+  gap: 10px;
+}
+.ring-cat {
+  grid-column: 1 / -1;
+  margin: 10px 0 0;
+  padding-bottom: 4px;
+  font-size: 14px;
+  color: var(--ui);
+  border-bottom: 1px solid var(--line);
+}
+.ring-tile {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 6px;
+  background: #0d131d;
+  border: 1px solid #293548;
+  border-radius: 10px;
+  cursor: pointer;
+  text-align: center;
+}
+.ring-tile:hover {
+  border-color: var(--ui);
+}
+.ring-tile.selected {
+  border-color: var(--ui);
+  box-shadow: 0 0 0 2px #00f0ff55;
+}
+.ring-tile canvas {
+  width: 100%;
+  max-width: 112px;
+  aspect-ratio: 1;
+  height: auto;
+  border-radius: 0;
+}
+.ring-tile strong {
+  font-size: 12px;
+  line-height: 1.2;
+}
+.ring-tile span {
+  font-size: 11px;
+  color: var(--muted);
+  line-height: 1.2;
+}

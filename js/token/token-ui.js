@@ -2,16 +2,30 @@
 import { $ } from "../core/dom.js";
 import { tcanvas, tctx, state } from "../core/state.js";
 import { getImg, loadImage, setStatus } from "../core/utils.js";
-import { DEFAULT_RING, RINGS } from "./rings.js";
+import { AUTO_RING, DEFAULT_RING, RINGS, RING_CATS, ringIdFor } from "./rings.js";
+import { THEMES } from "../themes/meta.js";
 import { drawToken } from "./render.js";
 import { drawCurrent } from "../card/form.js";
 
-Object.entries(RINGS).forEach(([key, r]) => {
-  const o = document.createElement("option");
-  o.value = key;
-  o.textContent = r.label;
-  $("tokenRing").appendChild(o);
-});
+{
+  const sel = $("tokenRing"),
+    auto = document.createElement("option");
+  auto.value = AUTO_RING;
+  auto.textContent = "Automatique (selon le thème de la carte)";
+  sel.appendChild(auto);
+  RING_CATS.forEach((cat) => {
+    const g = Object.assign(document.createElement("optgroup"), { label: cat });
+    Object.entries(RINGS)
+      .filter(([, r]) => r.cat === cat)
+      .forEach(([key, r]) => {
+        const o = document.createElement("option");
+        o.value = key;
+        o.textContent = r.label;
+        g.appendChild(o);
+      });
+    sel.appendChild(g);
+  });
+}
 
 export function syncTokenLabels() {
   ["tokenZoom", "tokenX", "tokenY"].forEach(
@@ -42,12 +56,13 @@ export function writeToken(d) {
   const custom = d.tokenSource === "custom";
   $("tokenSrcCustom").checked = custom;
   $("tokenSrcCard").checked = !custom;
-  $("tokenRing").value = RINGS[d.tokenRing] ? d.tokenRing : DEFAULT_RING;
+  $("tokenRing").value =
+    d.tokenRing === AUTO_RING || RINGS[d.tokenRing] ? d.tokenRing : DEFAULT_RING;
   setTokenAdjust(d.tokenZoom, d.tokenX, d.tokenY);
 }
 
 /** Image affichée dans le token de l'aperçu. */
-const tokenImage = (d) =>
+export const tokenImage = (d) =>
   d.tokenSource === "custom" && state.tokenArt ? state.tokenArt : state.art;
 
 export function drawTokenPreview(d) {
@@ -58,6 +73,14 @@ export function drawTokenPreview(d) {
       ? "Image distincte active. Choisissez un autre fichier pour la remplacer."
       : "Aucune image distincte choisie : l’illustration de la carte est utilisée en attendant."
     : "";
+  const auto = $("tokenRing").value === AUTO_RING;
+  $("tokenRingHint").textContent = auto
+    ? "Anneau suggéré par le thème « " +
+      (THEMES[d.theme]?.label || d.theme) +
+      " » : " +
+      RINGS[ringIdFor(d)].label +
+      "."
+    : "Anneau choisi indépendamment du thème de la carte.";
   drawToken(tctx, d, tokenImage(d));
   tcanvas.classList.toggle("token-draggable", !!state.tokenGeom);
 }

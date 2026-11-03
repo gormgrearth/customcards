@@ -148,6 +148,10 @@
           </div>
           <label for="tokenRing">Anneau</label>
           <select id="tokenRing"></select>
+          <p class="hint" id="tokenRingHint" style="margin: 6px 0"></p>
+          <button type="button" id="tokenRingOpen">
+            Bibliothèque d’anneaux…
+          </button>
         </fieldset>
         <div class="back-editor">
           <h2>Face arrière</h2>
@@ -400,6 +404,18 @@
         </div>
       </section>
     </main>
+    <dialog id="tokenRingDlg" class="wide">
+      <h2>Bibliothèque d’anneaux</h2>
+      <p class="hint">
+        « Automatique » suit le thème de la carte. Tout autre choix est
+        indépendant : vous pouvez associer l’anneau d’un thème à la carte d’un
+        autre.
+      </p>
+      <div id="tokenRingGrid" class="ring-grid"></div>
+      <div class="row" style="margin-top: 14px">
+        <button type="button" data-close>Fermer</button>
+      </div>
+    </dialog>
     <dialog id="authDlg">
       <form id="authForm">
         <h2 id="authTitle">Connexion</h2>

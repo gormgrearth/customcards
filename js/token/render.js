@@ -1,7 +1,7 @@
 /** Rendu du token : disque d'illustration + anneau (fond transparent). */
 import { state, tctx } from "../core/state.js";
 import { getImg } from "../core/utils.js";
-import { DEFAULT_RING, RINGS } from "./rings.js";
+import { RINGS, ringIdFor } from "./rings.js";
 
 export const TOKEN_SIZE = 512;
 
@@ -17,7 +17,7 @@ export async function tokenImageOf(d) {
 export function drawToken(c, d, img) {
   const L = TOKEN_SIZE,
     k = c.canvas.width / L,
-    ring = RINGS[d.tokenRing] || RINGS[DEFAULT_RING],
+    ring = RINGS[ringIdFor(d)],
     cx = L / 2,
     cy = L / 2,
     ro = L / 2 - 4,
