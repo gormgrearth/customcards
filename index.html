@@ -15,6 +15,7 @@
     <link rel="stylesheet" href="css/library.css" />
     <link rel="stylesheet" href="css/backs.css" />
     <link rel="stylesheet" href="css/token.css" />
+    <link rel="stylesheet" href="css/selection.css" />
     <link rel="stylesheet" href="css/responsive-dialogs.css" />
   </head>
   <body>
@@ -312,6 +313,8 @@
             <h2 style="margin: 0">Bibliothèque</h2>
             <div class="row">
               <button id="shareBtn" type="button" hidden>🔗 Partager…</button
+              ><button id="selectToggle" type="button" aria-pressed="false">
+                ☑ Sélectionner</button
               ><button id="exportAll">Tous les JPG</button
               ><button id="backup">Sauvegarde .json</button
               ><button id="restore">Restaurer</button
@@ -388,6 +391,41 @@
             autre pour l’y imbriquer. Cliquez sur une carte pour l’agrandir ;
             cliquez en dehors de la carte pour fermer le zoom.
           </p>
+          <div id="selectBar" class="select-bar" hidden>
+            <strong id="selectCount">0 carte sélectionnée</strong>
+            <button type="button" id="selectAll">Tout sélectionner</button>
+            <button type="button" id="selectNone">Aucune</button>
+            <fieldset class="select-formats">
+              <legend>Formats à télécharger</legend>
+              <label
+                ><input type="checkbox" id="fmtCard" checked /> Carte</label
+              >
+              <label
+                ><input type="checkbox" id="fmtCfd" /> Carte confidentielle
+                <small>(-cfd)</small></label
+              >
+              <label
+                ><input type="checkbox" id="fmtTkn" /> Token
+                <small>(-tkn)</small></label
+              >
+            </fieldset>
+            <label
+              ><input type="checkbox" id="fmtZip" checked /> Regrouper dans un
+              ZIP</label
+            >
+            <label id="fmtFoldersWrap"
+              ><input type="checkbox" id="fmtFolders" /> Reproduire les
+              dossiers</label
+            >
+            <button class="primary" id="selectExport" type="button">
+              Télécharger la sélection
+            </button>
+            <span class="hint" id="selectInfo" aria-live="polite"></span>
+            <span class="hint" style="flex-basis: 100%; margin: 0"
+              >Cliquez sur les cartes pour les cocher (Maj + clic : plage).
+              « Tout sélectionner » prend les cartes affichées.</span
+            >
+          </div>
           <div id="folderList" class="folder-list"></div>
           <div id="library" class="library"></div>
         </div>

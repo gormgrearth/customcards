@@ -14,13 +14,16 @@ import {
 import { openZoom } from "./zoom.js";
 import { copyVisualProps, pasteVisualProps } from "./props-clipboard.js";
 import { exportCard, exportToken } from "./export.js";
+import { refreshSelection, toggleSelected } from "./selection.js";
 
 export async function renderLibrary() {
   renderFolders();
   const root = $("library");
   root.innerHTML = "";
-  const visible = state.cards.filter(cardVisible);
+  const visible = state.cards.filter(cardVisible),
+    visibleIds = visible.map((c) => String(c.id));
   if (!visible.length) {
+    refreshSelection();
     const anyHidden = state.cards.some((c) =>
       isUnder(c.folder || "", state.activeFolder),
     );
@@ -43,6 +46,21 @@ export async function renderLibrary() {
         : "");
     tile.draggable = true;
     tile.tabIndex = 0;
+    tile.dataset.id = String(d.id);
+    const chk = document.createElement("input");
+    chk.type = "checkbox";
+    chk.className = "tile-check";
+    chk.setAttribute("aria-label", "Sélectionner « " + d.name + " »");
+    chk.addEventListener("click", (e) => {
+      e.stopPropagation();
+      toggleSelected(d.id, e.shiftKey, visibleIds);
+      refreshSelection();
+    });
+    tile.addEventListener("click", (e) => {
+      if (!state.selectMode || e.target.closest(".tile-actions, .tile-check")) return;
+      toggleSelected(d.id, e.shiftKey, visibleIds);
+      refreshSelection();
+    });
     tile.title =
       "Cliquer sur l’image pour agrandir • Cliquer en dehors pour fermer • Glisser-déposer vers un dossier ou sur une autre carte";
     tile.addEventListener("dragstart", (e) => {
@@ -158,11 +176,12 @@ export async function renderLibrary() {
         "danger",
       ),
     );
-    tile.append(mini, nm, act);
+    tile.append(chk, mini, nm, act);
     root.appendChild(tile);
     mini.tabIndex = 0;
     mini.setAttribute("aria-label", "Cliquer pour agrandir la carte " + d.name);
     mini.addEventListener("click", (e) => {
+      if (state.selectMode) return; // en mode sélection, le clic coche la carte
       e.stopPropagation();
       openZoom(tile, mini);
     });
@@ -174,4 +193,5 @@ export async function renderLibrary() {
     });
     getImg(d.artData).then((im) => draw(mini.getContext("2d"), d, im));
   }
+  refreshSelection();
 }

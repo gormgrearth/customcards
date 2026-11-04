@@ -23,6 +23,7 @@ import "./init/form-events.js";
 import "./init/art-drag.js";
 import "./token/token-drag.js";
 import "./token/ring-library.js";
+import "./library/selection.js";
 import "./init/folder-events.js";
 
 (async () => {

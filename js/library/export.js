@@ -6,33 +6,56 @@ import { getImg, setStatus, slug } from "../core/utils.js";
 import { draw } from "../card/render.js";
 import { TOKEN_SIZE, drawToken, tokenImageOf } from "../token/render.js";
 
-export async function exportCard(d) {
-  const c = document.createElement("canvas");
-  c.width = W;
-  c.height = H;
-  draw(c.getContext("2d"), d, await getImg(d.artData));
+const toBlob = (cv, type, q) => new Promise((res) => cv.toBlob(res, type, q));
+
+/** Déclenche le téléchargement d'un Blob. */
+export function download(blob, name) {
+  const url = URL.createObjectURL(blob);
   const a = document.createElement("a");
-  // suffixe « -cfd » : carte exportée en version confidentielle
-  a.download =
-    "card_npc_" + slug(d.name) + (state.confidentialMode ? "-cfd" : "") + ".jpg";
-  a.href = c.toDataURL("image/jpeg", 0.94);
+  a.download = name;
+  a.href = url;
   document.body.appendChild(a);
   a.click();
   a.remove();
+  setTimeout(() => URL.revokeObjectURL(url), 10000);
 }
 
-/** Token en PNG (fond transparent) ; fichier suffixé « -tkn ». */
-export async function exportToken(d) {
+/** Carte en JPG ; `confidential` force la version confidentielle ou complète (défaut : réglage général). */
+export async function cardBlob(d, confidential = state.confidentialMode) {
+  const c = document.createElement("canvas");
+  c.width = W;
+  c.height = H;
+  const img = await getImg(d.artData),
+    prev = state.confidentialMode;
+  state.confidentialMode = !!confidential;
+  try {
+    draw(c.getContext("2d"), d, img);
+  } finally {
+    state.confidentialMode = prev;
+  }
+  return toBlob(c, "image/jpeg", 0.94);
+}
+
+/** Token en PNG (fond transparent). */
+export async function tokenBlob(d) {
   const c = document.createElement("canvas");
   c.width = TOKEN_SIZE;
   c.height = TOKEN_SIZE;
   drawToken(c.getContext("2d"), d, await tokenImageOf(d));
-  const a = document.createElement("a");
-  a.download = "card_npc_" + slug(d.name) + "-tkn.png";
-  a.href = c.toDataURL("image/png");
-  document.body.appendChild(a);
-  a.click();
-  a.remove();
+  return toBlob(c, "image/png");
+}
+
+export async function exportCard(d) {
+  // suffixe « -cfd » : carte exportée en version confidentielle
+  download(
+    await cardBlob(d, state.confidentialMode),
+    "card_npc_" + slug(d.name) + (state.confidentialMode ? "-cfd" : "") + ".jpg",
+  );
+}
+
+/** Token en PNG (fond transparent) ; fichier suffixé « -tkn ». */
+export async function exportToken(d) {
+  download(await tokenBlob(d), "card_npc_" + slug(d.name) + "-tkn.png");
 }
 
 export async function exportBackCard(d) {
