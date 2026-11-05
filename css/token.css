@@ -124,3 +124,28 @@
   color: var(--muted);
   line-height: 1.2;
 }
+.ring-opt {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 4px 0 8px;
+  color: var(--ink);
+  cursor: pointer;
+}
+.ring-opt input {
+  width: auto;
+  margin: 0;
+}
+.ring-tile .ring-themes {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+}
+.ring-tile .ring-themes i {
+  flex: 0 0 auto;
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  border: 1px solid #ffffff55;
+}

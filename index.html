@@ -445,10 +445,14 @@
     <dialog id="tokenRingDlg" class="wide">
       <h2>Bibliothèque d’anneaux</h2>
       <p class="hint">
-        « Automatique » suit le thème de la carte. Tout autre choix est
-        indépendant : vous pouvez associer l’anneau d’un thème à la carte d’un
-        autre.
+        « Automatique » suit le thème de la carte (un anneau par thème). Tout
+        autre choix est indépendant : vous pouvez associer l’anneau d’un thème à
+        la carte d’un autre. L’anneau reprend toujours la couleur de la carte.
       </p>
+      <label class="ring-opt"
+        ><input type="checkbox" id="ringThemeColors" /> Aperçus aux couleurs des
+        thèmes associés (sinon : couleur de la carte)</label
+      >
       <div id="tokenRingGrid" class="ring-grid"></div>
       <div class="row" style="margin-top: 14px">
         <button type="button" data-close>Fermer</button>

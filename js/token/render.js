@@ -2,6 +2,7 @@
 import { state, tctx } from "../core/state.js";
 import { getImg } from "../core/utils.js";
 import { RINGS, ringIdFor } from "./rings.js";
+import { accentLip } from "./ring-tools.js";
 
 export const TOKEN_SIZE = 512;
 
@@ -68,5 +69,7 @@ export function drawToken(c, d, img) {
   c.restore();
 
   ring.draw(c, { L, cx, cy, ro, ri }, acc);
+  // anneau au matériau neutre : fin liseré à la couleur de la carte (rappel du thème)
+  if (!ring.accent) accentLip(c, { cx, cy, ro, ri }, acc);
   c.restore();
 }
