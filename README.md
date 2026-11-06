@@ -6,7 +6,7 @@ Application statique (GitHub Pages). Point d'entrée unique : `index.html` → `
 
 ```
 index.html              structure HTML + chargement des scripts
-css/                    base · editor · library · backs · token · selection · responsive-dialogs (ordre = cascade)
+css/                    base · editor · library · backs · token · selection · viewer · responsive-dialogs (ordre = cascade)
 js/firebase-config.js   configuration Firebase (script classique)
 js/main.js              démarrage de l'application
 js/core/                dom, config, state (état partagé), storage, utils
@@ -22,7 +22,9 @@ js/init/                ui-setup, form-events, art-drag, folder-events
 ## Où modifier quoi
 - Ajouter/modifier un thème : `js/themes/meta.js` (libellé, couleur, catégorie) + `js/themes/<catégorie>.js` (dessin).
 - Ajouter un dos de carte : créer `js/backs/<nom>.js` (`export default { name, data }`) et l'ajouter dans `js/backs/index.js`.
-- Sélection multiple : bouton « ☑ Sélectionner » de la bibliothèque (`js/library/selection.js`) → export groupé carte / carte confidentielle (`-cfd`) / token (`-tkn`) en ZIP (`zip.js`, sans dépendance) ou en fichiers séparés (`batch-export.js`).
+- Sélection multiple : Ctrl / ⌘ + clic sur les cartes de la bibliothèque (Maj + clic : plage, Échap : tout désélectionner) — `js/library/selection.js`. La barre de téléchargement groupé (carte / carte confidentielle `-cfd` / token `-tkn`, ZIP via `zip.js`, `batch-export.js`) et le bandeau de l'éditeur apparaissent dès qu'une carte est sélectionnée.
+- Édition groupée (`js/library/multi-edit.js`) : avec une sélection, les changements de titre, thème, couleur, anneau, cadre de l'illustration et verso faits dans l'éditeur sont appliqués à toutes les cartes sélectionnées.
+- Visionneuse 3D (`js/library/card-viewer.js`, `css/viewer.css`) : le curseur reste 1,5 s sur une carte de la bibliothèque (ou clic) → carte recto/verso orientable au glisser + token en pièce épaisse orientable séparément (verso en noir et blanc inversé).
 - Bibliothèque d'anneaux de token : un anneau distinct par thème de carte (62) + quelques anneaux libres, dessinés par catégorie dans `js/token/rings/*.js` (outils communs : `js/token/ring-tools.js`), catalogue et lien thème → anneau dans `js/token/rings.js` (`BY_THEME`). Valeur « auto » (défaut) = anneau du thème de la carte ; tout autre choix est indépendant du thème. Les anneaux sans `accent: true` reçoivent automatiquement un liseré à la couleur de la carte. Ajouter un anneau : une entrée dans le fichier de sa catégorie (liste, fenêtre d'aperçus et export la prennent en compte).
 - Noms de fichiers exportés : `card_npc_<nom>.jpg` · `card_npc_<nom>-cfd.jpg` (mode confidentiel) · `card_npc_<nom>-tkn.png` (token).
 - Variables partagées entre modules : objet `state` dans `js/core/state.js` (`state.cards`, `state.folders`…).

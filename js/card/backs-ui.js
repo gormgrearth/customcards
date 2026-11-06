@@ -4,6 +4,7 @@ import { state } from "../core/state.js";
 import { BACK_STYLES } from "../backs/index.js";
 import { kv } from "../core/storage.js";
 import { loadImage } from "../core/utils.js";
+import { syncSelection } from "../library/multi-edit.js";
 
 const backStyleSelect = $("backStyle");
 
@@ -43,6 +44,7 @@ export function setBackArt(data, label) {
     ? "Verso sélectionné : " + (label || backName(state.backArtData))
     : "Aucun verso sélectionné.";
   renderBackLibrary();
+  if (!state.syncPaused) syncSelection();
 }
 
 export function renderBackLibrary() {

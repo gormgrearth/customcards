@@ -34,7 +34,7 @@ export const state = {
   // Visibilité dans la bibliothèque (état d'affichage uniquement, non sauvegardé)
   showNested: true, // afficher les cartes qui ne sont pas directement dans le dossier actif
   draggedCardId: null,
-  selectMode: false, // sélection multiple dans la bibliothèque
+  syncPaused: false, // true pendant le chargement de l'éditeur (pas de propagation aux cartes sélectionnées)
   selectedIds: new Set(), // identifiants (texte) des cartes sélectionnées
   lastSelectedId: null,
   fauth: null,

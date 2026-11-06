@@ -12,6 +12,7 @@ import { setColor, trackColor } from "./colors.js";
 import { renderHitZones } from "./inline-editor.js";
 import { drawTokenPreview, readToken, writeToken } from "../token/token-ui.js";
 import { renderLibrary } from "../library/library.js";
+import { rebase, syncSelection } from "../library/multi-edit.js";
 import { schedulePrefs } from "../cloud/local.js";
 
 export function norm(d) {
@@ -37,6 +38,16 @@ export function read() {
 }
 
 export function write(d) {
+  state.syncPaused = true;
+  try {
+    writeForm(d);
+  } finally {
+    state.syncPaused = false;
+  }
+  rebase();
+}
+
+function writeForm(d) {
   state.backArtData = d.backArtData || null;
   setBackArt(
     state.backArtData,
@@ -62,6 +73,7 @@ export const drawCurrent = () => {
   const d = read();
   draw(pctx, d, state.art);
   drawTokenPreview(d);
+  syncSelection(d);
   renderHitZones();
   canvas.classList.toggle("art-draggable", !!(state.art && state.artGeom));
   schedulePrefs();

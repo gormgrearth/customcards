@@ -1,9 +1,10 @@
-/** Sélection multiple de cartes dans la bibliothèque + téléchargement groupé. */
+/** Sélection multiple (Ctrl / ⌘ + clic) dans la bibliothèque + téléchargement groupé. */
 import { $ } from "../core/dom.js";
 import { state } from "../core/state.js";
 import { setStatus } from "../core/utils.js";
 import { cardVisible } from "./folders.js";
 import { exportSelection } from "./batch-export.js";
+import { isViewerOpen } from "./card-viewer.js";
 
 const FMT = () => ({
   card: $("fmtCard").checked,
@@ -16,7 +17,7 @@ const FMT = () => ({
 const selectedCards = () =>
   state.cards.filter((c) => state.selectedIds.has(String(c.id)));
 
-/** Bascule une carte ; avec Maj, sélectionne/désélectionne la plage depuis la dernière carte cochée. */
+/** Ctrl / ⌘ + clic : ajoute ou retire une carte. Maj + clic : sélectionne la plage depuis la dernière carte cliquée. */
 export function toggleSelected(id, range, visibleIds) {
   const key = String(id);
   if (range && state.lastSelectedId != null && visibleIds.includes(state.lastSelectedId)) {
@@ -31,46 +32,44 @@ export function toggleSelected(id, range, visibleIds) {
   state.lastSelectedId = key;
 }
 
-/** Met à jour tuiles et barre de sélection sans redessiner la bibliothèque. */
+/** Met à jour tuiles, barre de téléchargement et bandeau de l'éditeur sans redessiner la bibliothèque. */
 export function refreshSelection() {
   const alive = new Set(state.cards.map((c) => String(c.id)));
   [...state.selectedIds].forEach((id) => alive.has(id) || state.selectedIds.delete(id));
   document.querySelectorAll("#library .npc-tile[data-id]").forEach((t) => {
     const on = state.selectedIds.has(t.dataset.id);
     t.classList.toggle("selected", on);
-    const chk = t.querySelector(".tile-check");
-    if (chk) chk.checked = on;
+    t.setAttribute("aria-selected", String(on));
   });
   const n = state.selectedIds.size,
     f = FMT(),
-    formats = +f.card + +f.cfd + +f.tkn;
-  $("selectCount").textContent =
-    n + (n > 1 ? " cartes sélectionnées" : " carte sélectionnée");
+    formats = +f.card + +f.cfd + +f.tkn,
+    label = n + (n > 1 ? " cartes sélectionnées" : " carte sélectionnée");
+  $("selectBar").hidden = n === 0;
+  $("multiEditBanner").hidden = n === 0;
+  $("selectCount").textContent = label;
+  $("multiEditCount").textContent = label + " :";
   $("selectInfo").textContent = n && formats ? "→ " + n * formats + " fichier(s)" : "";
   $("fmtFoldersWrap").hidden = !f.zip;
 }
 
-function setMode(on) {
-  state.selectMode = on;
-  $("library").classList.toggle("select-mode", on);
-  $("selectBar").hidden = !on;
-  $("selectToggle").setAttribute("aria-pressed", String(on));
-  $("selectToggle").textContent = on ? "✕ Terminer la sélection" : "☑ Sélectionner";
+const clearSelection = () => {
+  state.selectedIds.clear();
+  state.lastSelectedId = null;
   refreshSelection();
-}
-
-$("selectToggle").onclick = () => setMode(!state.selectMode);
+};
 
 $("selectAll").onclick = () => {
   state.cards.filter(cardVisible).forEach((c) => state.selectedIds.add(String(c.id)));
   refreshSelection();
 };
+$("selectNone").onclick = clearSelection;
+$("multiEditClear").onclick = clearSelection;
 
-$("selectNone").onclick = () => {
-  state.selectedIds.clear();
-  state.lastSelectedId = null;
-  refreshSelection();
-};
+// Échap : ferme d'abord la visionneuse, sinon vide la sélection
+document.addEventListener("keydown", (e) => {
+  if (e.key === "Escape" && !isViewerOpen() && state.selectedIds.size) clearSelection();
+});
 
 ["fmtCard", "fmtCfd", "fmtTkn", "fmtZip", "fmtFolders"].forEach((id) =>
   $(id).addEventListener("change", refreshSelection),

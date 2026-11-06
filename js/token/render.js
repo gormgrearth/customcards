@@ -73,3 +73,22 @@ export function drawToken(c, d, img) {
   if (!ring.accent) accentLip(c, { cx, cy, ro, ri }, acc);
   c.restore();
 }
+
+/** Version « verso » d'une illustration (pièce de monnaie) : noir et blanc, en négatif. */
+export function negativeBW(img, max = 1024) {
+  if (!img) return null;
+  const s = Math.min(1, max / Math.max(img.width, img.height)),
+    c = document.createElement("canvas");
+  c.width = Math.max(1, Math.round(img.width * s));
+  c.height = Math.max(1, Math.round(img.height * s));
+  const x = c.getContext("2d");
+  x.drawImage(img, 0, 0, c.width, c.height);
+  const id = x.getImageData(0, 0, c.width, c.height),
+    p = id.data;
+  for (let i = 0; i < p.length; i += 4) {
+    const g = 255 - (0.299 * p[i] + 0.587 * p[i + 1] + 0.114 * p[i + 2]);
+    p[i] = p[i + 1] = p[i + 2] = g;
+  }
+  x.putImageData(id, 0, 0);
+  return c;
+}

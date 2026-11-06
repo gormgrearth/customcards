@@ -11,10 +11,10 @@ import {
   moveDraggedCard,
   renderFolders,
 } from "./folders.js";
-import { openZoom } from "./zoom.js";
 import { copyVisualProps, pasteVisualProps } from "./props-clipboard.js";
 import { exportCard, exportToken } from "./export.js";
 import { refreshSelection, toggleSelected } from "./selection.js";
+import { cancelDwell, openViewer, scheduleViewer } from "./card-viewer.js";
 
 export async function renderLibrary() {
   renderFolders();
@@ -47,20 +47,22 @@ export async function renderLibrary() {
     tile.draggable = true;
     tile.tabIndex = 0;
     tile.dataset.id = String(d.id);
-    const chk = document.createElement("input");
-    chk.type = "checkbox";
-    chk.className = "tile-check";
-    chk.setAttribute("aria-label", "Sélectionner « " + d.name + " »");
-    chk.addEventListener("click", (e) => {
-      e.stopPropagation();
-      toggleSelected(d.id, e.shiftKey, visibleIds);
+    // sélection multiple : Ctrl / ⌘ + clic (Maj + clic : plage)
+    const toggle = (e) => {
+      toggleSelected(d.id, e.shiftKey && !e.ctrlKey && !e.metaKey, visibleIds);
       refreshSelection();
-    });
+    };
     tile.addEventListener("click", (e) => {
-      if (!state.selectMode || e.target.closest(".tile-actions, .tile-check")) return;
-      toggleSelected(d.id, e.shiftKey, visibleIds);
-      refreshSelection();
+      if (!(e.ctrlKey || e.metaKey || e.shiftKey) || e.target.closest(".tile-actions")) return;
+      e.preventDefault();
+      toggle(e);
     });
+    tile.addEventListener("contextmenu", (e) => {
+      if (!e.ctrlKey) return; // Ctrl + clic = clic droit sur Mac
+      e.preventDefault();
+      toggle(e);
+    });
+    tile.setAttribute("aria-selected", String(state.selectedIds.has(String(d.id))));
     tile.title =
       "Cliquer sur l’image pour agrandir • Cliquer en dehors pour fermer • Glisser-déposer vers un dossier ou sur une autre carte";
     tile.addEventListener("dragstart", (e) => {
@@ -176,19 +178,29 @@ export async function renderLibrary() {
         "danger",
       ),
     );
-    tile.append(chk, mini, nm, act);
+    tile.append(mini, nm, act);
     root.appendChild(tile);
     mini.tabIndex = 0;
-    mini.setAttribute("aria-label", "Cliquer pour agrandir la carte " + d.name);
+    mini.setAttribute(
+      "aria-label",
+      "Carte " + d.name + " : laissez le curseur dessus (ou Entrée) pour l'agrandir ; Ctrl + clic pour la sélectionner",
+    );
+    // la visionneuse 3D s'ouvre quand le curseur reste sur la carte (ou au clic / Entrée)
+    mini.addEventListener("mouseenter", (e) => {
+      if (!e.buttons && window.matchMedia("(hover: hover)").matches) scheduleViewer(d, mini);
+    });
+    mini.addEventListener("mouseleave", cancelDwell);
+    mini.addEventListener("mousedown", cancelDwell);
+    tile.addEventListener("dragstart", cancelDwell);
     mini.addEventListener("click", (e) => {
-      if (state.selectMode) return; // en mode sélection, le clic coche la carte
+      if (e.ctrlKey || e.metaKey || e.shiftKey) return; // sélection : géré par la tuile
       e.stopPropagation();
-      openZoom(tile, mini);
+      openViewer(d, mini);
     });
     mini.addEventListener("keydown", (e) => {
       if (e.key === "Enter" || e.key === " ") {
         e.preventDefault();
-        openZoom(tile, mini);
+        openViewer(d, mini);
       }
     });
     getImg(d.artData).then((im) => draw(mini.getContext("2d"), d, im));

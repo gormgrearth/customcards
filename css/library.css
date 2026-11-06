@@ -286,37 +286,6 @@
   z-index: 1;
   cursor: zoom-in;
 }
-/* Zoom en surimpression : centré et remonté pour ne pas être rogné en bas de l'écran. */
-.npc-tile.zoomed {
-  z-index: 1001;
-}
-.npc-tile canvas.zoom-overlay {
-  position: fixed;
-  left: 50%;
-  top: 44%;
-  width: min(min(70vw, 390px), calc((100vh - 32px) * 0.714));
-  height: auto;
-  aspect-ratio: 2.5/3.5;
-  transform: translate(-50%, -50%);
-  z-index: 1000;
-  box-shadow: 0 14px 38px #000e;
-  outline: 2px solid var(--ui);
-  outline-offset: 2px;
-  border-radius: 8px;
-  cursor: zoom-out;
-}
-.zoom-backdrop {
-  position: fixed;
-  inset: 0;
-  background: rgba(0, 0, 0, 0.62);
-  z-index: 999;
-}
-@media (hover: none) {
-  .npc-tile canvas.zoom-overlay {
-    width: min(82vw, calc((100vh - 28px) * 0.714));
-    top: 43%;
-  }
-}
 .privacy-toggle {
   display: flex;
   align-items: flex-start;

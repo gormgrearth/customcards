@@ -42,27 +42,46 @@
 .select-formats small {
   color: var(--muted);
 }
-.tile-check {
-  display: none;
-  position: absolute;
-  top: 8px;
-  right: 8px;
-  z-index: 3;
-  width: 24px;
-  height: 24px;
-  margin: 0;
-  accent-color: #00f0ff;
-  cursor: pointer;
-}
-.library.select-mode .tile-check {
-  display: block;
-}
-.library.select-mode .npc-tile {
-  cursor: pointer;
-}
 .npc-tile.selected {
   border-color: var(--ui);
   box-shadow:
     0 0 0 2px #00f0ff66,
     0 8px 24px #0008;
+}
+.npc-tile.selected::after {
+  content: "✓";
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  z-index: 3;
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  background: var(--ui);
+  color: #001014;
+  font-weight: 800;
+  line-height: 22px;
+  text-align: center;
+  pointer-events: none;
+}
+.multi-edit-banner {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px 10px;
+  align-items: center;
+  margin: 0 0 12px;
+  padding: 9px 12px;
+  border: 1px solid #ffd866;
+  border-radius: 10px;
+  background: #292313;
+  color: #ffe9a8;
+  font-size: 13px;
+  line-height: 1.4;
+}
+.multi-edit-banner[hidden] {
+  display: none;
+}
+.multi-edit-banner button {
+  padding: 3px 10px;
+  font-size: 12px;
 }

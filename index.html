@@ -16,6 +16,7 @@
     <link rel="stylesheet" href="css/backs.css" />
     <link rel="stylesheet" href="css/token.css" />
     <link rel="stylesheet" href="css/selection.css" />
+    <link rel="stylesheet" href="css/viewer.css" />
     <link rel="stylesheet" href="css/responsive-dialogs.css" />
   </head>
   <body>
@@ -43,6 +44,15 @@
     <main>
       <section class="panel editor">
         <h2>Créer / modifier un PNJ</h2>
+        <div id="multiEditBanner" class="multi-edit-banner" role="status" hidden>
+          <strong id="multiEditCount"></strong>
+          <span
+            >titre, thème, couleur, anneau du token, cadre de l’illustration et
+            verso modifiés ici s’appliquent à toutes les cartes
+            sélectionnées.</span
+          >
+          <button type="button" id="multiEditClear">Désélectionner</button>
+        </div>
         <label for="npcTheme">Thème</label>
         <select id="npcTheme"></select>
         <label for="npcTitle">Titre de la carte</label>
@@ -313,8 +323,6 @@
             <h2 style="margin: 0">Bibliothèque</h2>
             <div class="row">
               <button id="shareBtn" type="button" hidden>🔗 Partager…</button
-              ><button id="selectToggle" type="button" aria-pressed="false">
-                ☑ Sélectionner</button
               ><button id="exportAll">Tous les JPG</button
               ><button id="backup">Sauvegarde .json</button
               ><button id="restore">Restaurer</button
@@ -388,8 +396,10 @@
           </div>
           <p class="hint">
             Glissez une carte vers un dossier, ou sur une autre carte pour la ranger dans le même dossier ; glissez un dossier sur un
-            autre pour l’y imbriquer. Cliquez sur une carte pour l’agrandir ;
-            cliquez en dehors de la carte pour fermer le zoom.
+            autre pour l’y imbriquer. Laissez le curseur 1,5 s sur une carte (ou
+            cliquez dessus) pour l’agrandir en 3D : glissez pour la tourner et
+            voir son verso, et tournez aussi le token (pièce) à côté ; Échap ou
+            sortie de la zone pour fermer. Ctrl + clic : sélection multiple.
           </p>
           <div id="selectBar" class="select-bar" hidden>
             <strong id="selectCount">0 carte sélectionnée</strong>
@@ -422,8 +432,9 @@
             </button>
             <span class="hint" id="selectInfo" aria-live="polite"></span>
             <span class="hint" style="flex-basis: 100%; margin: 0"
-              >Cliquez sur les cartes pour les cocher (Maj + clic : plage).
-              « Tout sélectionner » prend les cartes affichées.</span
+              >Ctrl + clic (⌘ + clic sur Mac) pour ajouter ou retirer une carte ;
+              Maj + clic : plage. « Tout sélectionner » prend les cartes
+              affichées. Échap : tout désélectionner.</span
             >
           </div>
           <div id="folderList" class="folder-list"></div>
