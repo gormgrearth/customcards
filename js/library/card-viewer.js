@@ -65,6 +65,9 @@ function spinner(target, onTick, onEnd) {
     lastT = 0;
   const apply = () => {
     target.style.transform = `rotateX(${rx}deg) rotateY(${ry}deg)`;
+    // La face visible est choisie ici (et non par `backface-visibility`, que certains navigateurs
+    // ignorent en 3D) : la normale du recto regarde l'observateur quand cos(rx)·cos(ry) > 0.
+    target.classList.toggle("flipped", Math.cos((rx * Math.PI) / 180) * Math.cos((ry * Math.PI) / 180) < 0);
     onTick && onTick(rx, ry);
   };
   const stop = () => {

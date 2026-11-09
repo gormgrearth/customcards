@@ -47,7 +47,6 @@
 .v-face {
   position: absolute;
   inset: 0;
-  overflow: hidden;
   border-radius: 8px;
   backface-visibility: hidden;
   -webkit-backface-visibility: hidden;
@@ -57,25 +56,43 @@
   display: block;
   width: 100%;
   height: 100%;
-  border-radius: 0;
+  border-radius: 8px;
+}
+/* recto et verso décalés de 0,5 px pour ne pas être coplanaires ; une seule face est visible à la fois
+   (classe .flipped posée par le script selon l'angle) */
+.v-card .v-face.front {
+  transform: translateZ(0.5px);
 }
 .v-card .v-face.back {
-  transform: rotateY(180deg);
+  transform: rotateY(180deg) translateZ(0.5px);
+  visibility: hidden;
+}
+.v-card.flipped .v-face.front,
+.v-coin.flipped .v-face.front {
+  visibility: hidden;
+}
+.v-card.flipped .v-face.back,
+.v-coin.flipped .v-face.back {
+  visibility: visible;
+}
+.v-coin .v-face.back {
+  visibility: hidden;
 }
 .v-glare {
   position: absolute;
   inset: 0;
+  border-radius: inherit;
   pointer-events: none;
-  mix-blend-mode: screen;
   background: linear-gradient(
     110deg,
     transparent calc(var(--gx, 50%) - 22%),
-    rgba(255, 255, 255, 0.2) var(--gx, 50%),
+    rgba(255, 255, 255, 0.16) var(--gx, 50%),
     transparent calc(var(--gx, 50%) + 22%)
   );
 }
 /* pièce : faces circulaires + couches pour l'épaisseur du chant */
-.v-coin .v-face {
+.v-coin .v-face,
+.v-coin .v-face canvas {
   border-radius: 50%;
   box-shadow: none;
 }
