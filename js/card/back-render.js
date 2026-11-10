@@ -1,13 +1,25 @@
 /** Dessin du verso d'une carte (utilisé par l'export et par la visionneuse). */
 import { H, W } from "../core/config.js";
 
-/** Dessine le verso sur le contexte `x` (taille W × H). `im` = illustration du verso (ou null : verso vierge). */
-export function drawBackFace(x, im) {
+/**
+ * Dessine le verso sur le contexte `x` (taille W × H). `im` = illustration du verso (ou null : verso vierge).
+ * `clean` (visionneuse 3D, carte 3D en HTML) : illustration sur toute la carte, sans le cadre néon ni les repères d'angle.
+ */
+export function drawBackFace(x, im, { clean = false } = {}) {
   const g = x.createLinearGradient(0, 0, W, H);
   g.addColorStop(0, "#06121e");
   g.addColorStop(1, "#02050b");
   x.fillStyle = g;
   x.fillRect(0, 0, W, H);
+  if (clean) {
+    if (im) {
+      const scale = Math.max(W / im.width, H / im.height),
+        sw = W / scale,
+        sh = H / scale;
+      x.drawImage(im, (im.width - sw) / 2, (im.height - sh) / 2, sw, sh, 0, 0, W, H);
+    }
+    return;
+  }
   const pad = 28,
     iw = W - pad * 2,
     ih = H - pad * 2;

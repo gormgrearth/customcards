@@ -15,7 +15,7 @@ export async function viewerHtml(d, confidential = state.confidentialMode) {
   const back = document.createElement("canvas");
   back.width = W;
   back.height = H;
-  drawBackFace(back.getContext("2d"), await getImg(d.backArtData));
+  drawBackFace(back.getContext("2d"), await getImg(d.backArtData), { clean: true });
   const [front, tokFront, tokBack] = await Promise.all([cardCanvas(d, confidential), tokenCanvas(d), tokenCanvas(d, true)]);
   return buildViewerHtml({
     title: d.name || "Carte",

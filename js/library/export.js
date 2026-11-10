@@ -5,7 +5,7 @@ import { state } from "../core/state.js";
 import { getImg, setStatus, slug } from "../core/utils.js";
 import { draw } from "../card/render.js";
 import { drawBackFace } from "../card/back-render.js";
-import { TOKEN_SIZE, drawToken, negativeBW, tokenImageOf } from "../token/render.js";
+import { TOKEN_SIZE, drawToken, metalRelief, tokenImageOf } from "../token/render.js";
 
 const toBlob = (cv, type, q) => new Promise((res) => cv.toBlob(res, type, q));
 
@@ -37,13 +37,13 @@ export async function cardCanvas(d, confidential = state.confidentialMode) {
   return c;
 }
 
-/** Token sur un canvas ; `back` = verso de la pièce (illustration en noir et blanc, inversée). */
+/** Token sur un canvas ; `back` = verso de la pièce (illustration en relief métal). */
 export async function tokenCanvas(d, back = false) {
   const c = document.createElement("canvas");
   c.width = TOKEN_SIZE;
   c.height = TOKEN_SIZE;
   const img = await tokenImageOf(d);
-  drawToken(c.getContext("2d"), d, back ? negativeBW(img) : img);
+  drawToken(c.getContext("2d"), d, back ? metalRelief(img) : img);
   return c;
 }
 

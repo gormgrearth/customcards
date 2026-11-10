@@ -3,13 +3,13 @@
  *  - s'ouvre quand le curseur reste DWELL_MS sur la carte (ou au clic) ;
  *  - la carte se tourne au glisser (bouton gauche) et montre son verso ;
  *  - le token apparaît à côté, sous forme de pièce épaisse : il ne suit pas la carte,
- *    mais se tourne lui aussi au glisser (verso : illustration en noir et blanc, inversée).
+ *    mais se tourne lui aussi au glisser (verso : illustration en relief métal).
  */
 import { H, W } from "../core/config.js";
 import { getImg } from "../core/utils.js";
 import { draw } from "../card/render.js";
 import { drawBackFace } from "../card/back-render.js";
-import { TOKEN_SIZE, drawToken, negativeBW, tokenImageOf } from "../token/render.js";
+import { TOKEN_SIZE, drawToken, metalRelief, tokenImageOf } from "../token/render.js";
 import { exportViewerHtml } from "./viewer-export.js";
 
 export const DWELL_MS = 1500;
@@ -209,7 +209,7 @@ export async function openViewer(d, anchor) {
   const front = cvs(W, H),
     back = cvs(W, H);
   draw(front.getContext("2d"), d, art);
-  drawBackFace(back.getContext("2d"), backImg);
+  drawBackFace(back.getContext("2d"), backImg, { clean: true }); // sans cadre néon
   faceOf("front", front, card);
   faceOf("back", back, card);
 
@@ -226,7 +226,7 @@ export async function openViewer(d, anchor) {
   const tf = cvs(TOKEN_SIZE, TOKEN_SIZE),
     tb = cvs(TOKEN_SIZE, TOKEN_SIZE);
   drawToken(tf.getContext("2d"), d, tokImg);
-  drawToken(tb.getContext("2d"), d, negativeBW(tokImg));
+  drawToken(tb.getContext("2d"), d, metalRelief(tokImg));
   const cf = faceOf("front", tf, coin),
     cb = faceOf("back", tb, coin);
   cf.style.transform = `translateZ(${thick / 2 + 0.5}px)`;

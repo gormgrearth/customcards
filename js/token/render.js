@@ -74,21 +74,92 @@ export function drawToken(c, d, img) {
   c.restore();
 }
 
-/** Version « verso » d'une illustration (pièce de monnaie) : noir et blanc, en négatif. */
-export function negativeBW(img, max = 1024) {
+/** Flou de boîte séparable (sur une carte de hauteurs). */
+function boxBlur(src, w, h, r) {
+  const tmp = new Float32Array(src.length),
+    out = new Float32Array(src.length),
+    d = 2 * r + 1,
+    cl = (v, m) => Math.max(0, Math.min(m, v));
+  for (let y = 0; y < h; y++) {
+    const row = y * w;
+    let acc = 0;
+    for (let i = -r; i <= r; i++) acc += src[row + cl(i, w - 1)];
+    for (let x = 0; x < w; x++) {
+      tmp[row + x] = acc / d;
+      acc += src[row + cl(x + r + 1, w - 1)] - src[row + cl(x - r, w - 1)];
+    }
+  }
+  for (let x = 0; x < w; x++) {
+    let acc = 0;
+    for (let i = -r; i <= r; i++) acc += tmp[cl(i, h - 1) * w + x];
+    for (let y = 0; y < h; y++) {
+      out[y * w + x] = acc / d;
+      acc += tmp[cl(y + r + 1, h - 1) * w + x] - tmp[cl(y - r, h - 1) * w + x];
+    }
+  }
+  return out;
+}
+
+/**
+ * Verso « relief métal » d'une illustration (face arrière de la pièce) :
+ * la luminance devient un relief (clair = en saillie), éclairé en biais et rendu comme de l'acier brossé.
+ */
+export function metalRelief(img, max = 1024) {
   if (!img) return null;
   const s = Math.min(1, max / Math.max(img.width, img.height)),
+    w = Math.max(3, Math.round(img.width * s)),
+    h = Math.max(3, Math.round(img.height * s)),
     c = document.createElement("canvas");
-  c.width = Math.max(1, Math.round(img.width * s));
-  c.height = Math.max(1, Math.round(img.height * s));
-  const x = c.getContext("2d");
-  x.drawImage(img, 0, 0, c.width, c.height);
-  const id = x.getImageData(0, 0, c.width, c.height),
-    p = id.data;
-  for (let i = 0; i < p.length; i += 4) {
-    const g = 255 - (0.299 * p[i] + 0.587 * p[i + 1] + 0.114 * p[i + 2]);
-    p[i] = p[i + 1] = p[i + 2] = g;
+  c.width = w;
+  c.height = h;
+  const x = c.getContext("2d", { willReadFrequently: true });
+  x.drawImage(img, 0, 0, w, h);
+  const id = x.getImageData(0, 0, w, h),
+    p = id.data,
+    n = w * h;
+  let H = new Float32Array(n);
+  for (let i = 0; i < n; i++) H[i] = (0.299 * p[i * 4] + 0.587 * p[i * 4 + 1] + 0.114 * p[i * 4 + 2]) / 255;
+  H = boxBlur(boxBlur(H, w, h, 2), w, h, 2); // relief adouci
+  let lo = 1,
+    hi = 0;
+  for (let i = 0; i < n; i++) {
+    if (H[i] < lo) lo = H[i];
+    if (H[i] > hi) hi = H[i];
   }
+  const span = hi - lo || 1,
+    K = 10, // intensité du relief
+    L = [-0.55, -0.65, 0.52], // lumière venant du haut à gauche
+    ln = Math.hypot(...L),
+    lx = L[0] / ln,
+    ly = L[1] / ln,
+    lz = L[2] / ln,
+    hv = Math.hypot(lx, ly, lz + 1),
+    hx = lx / hv,
+    hy = ly / hv,
+    hz = (lz + 1) / hv;
+  for (let yy = 0; yy < h; yy++)
+    for (let xx = 0; xx < w; xx++) {
+      const i = yy * w + xx,
+        xl = yy * w + Math.max(0, xx - 1),
+        xr = yy * w + Math.min(w - 1, xx + 1),
+        yu = Math.max(0, yy - 1) * w + xx,
+        yd = Math.min(h - 1, yy + 1) * w + xx,
+        nx = (-(H[xr] - H[xl]) * K) / span,
+        ny = (-(H[yd] - H[yu]) * K) / span,
+        nl = Math.hypot(nx, ny, 1),
+        diff = Math.max(0, (nx * lx + ny * ly + lz) / nl),
+        spec = Math.pow(Math.max(0, (nx * hx + ny * hy + hz) / nl), 36),
+        height = (H[i] - lo) / span,
+        shade = (0.04 + 0.78 * diff) * (0.8 + 0.34 * height),
+        grain = (((i * 2654435761) >>> 0) % 9) - 4 + (((yy * 40503) >>> 0) % 7) - 3, // fin grain d'acier brossé
+        r = 26 + (236 - 26) * shade + spec * 110 + grain,
+        g = 31 + (241 - 31) * shade + spec * 110 + grain,
+        b = 40 + (250 - 40) * shade + spec * 115 + grain;
+      p[i * 4] = r < 0 ? 0 : r > 255 ? 255 : r;
+      p[i * 4 + 1] = g < 0 ? 0 : g > 255 ? 255 : g;
+      p[i * 4 + 2] = b < 0 ? 0 : b > 255 ? 255 : b;
+      p[i * 4 + 3] = 255;
+    }
   x.putImageData(id, 0, 0);
   return c;
 }
