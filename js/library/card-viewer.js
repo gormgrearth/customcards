@@ -10,6 +10,7 @@ import { getImg } from "../core/utils.js";
 import { draw } from "../card/render.js";
 import { drawBackFace } from "../card/back-render.js";
 import { TOKEN_SIZE, drawToken, negativeBW, tokenImageOf } from "../token/render.js";
+import { exportViewerHtml } from "./viewer-export.js";
 
 export const DWELL_MS = 1500;
 const GAP = 24,
@@ -46,7 +47,7 @@ export function closeViewer() {
   v.root.remove();
 }
 
-const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
+export const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
 const el = (tag, cls, parent) => {
   const e = document.createElement(tag);
   if (cls) e.className = cls;
@@ -55,7 +56,7 @@ const el = (tag, cls, parent) => {
 };
 
 /** Rotation au glisser (inertie, double-clic = remise à plat). `target` = élément 3D, `onTick` = mise à jour (reflet). */
-function spinner(target, onTick, onEnd) {
+export function spinner(target, onTick, onEnd) {
   let rx = 0,
     ry = 0,
     vx = 0,
@@ -155,7 +156,7 @@ export async function openViewer(d, anchor) {
     r = anchor.getBoundingClientRect(),
     cx = r.left + r.width / 2,
     cy = r.top + r.height / 2,
-    top = clamp(cy - ch / 2, MARGIN, vh - ch - MARGIN - 26),
+    top = clamp(cy - ch / 2, MARGIN, vh - ch - MARGIN - 48),
     left0 = cx - cw / 2;
   let ts = clamp(cw * 0.55, 110, 220),
     overlay = false,
@@ -178,7 +179,7 @@ export async function openViewer(d, anchor) {
   const bx = Math.min(left, coinL),
     by = Math.min(top, coinT),
     bw = Math.max(left + cw, coinL + ts) - bx,
-    bh = Math.max(top + ch, coinT + ts) - by + 26;
+    bh = Math.max(top + ch, coinT + ts) - by + 48;
 
   // --- DOM
   const root = el("div", "viewer"),
@@ -233,6 +234,14 @@ export async function openViewer(d, anchor) {
 
   const hint = el("div", "v-hint", root);
   hint.textContent = "Glissez pour tourner la carte ou la pièce · double-clic : remettre à plat · Échap : fermer";
+  const exp = el("button", "v-export", root);
+  exp.type = "button";
+  exp.textContent = "⇩ Exporter en HTML 3D";
+  exp.title = "Page HTML autonome : carte recto/verso et token en pièce, à tourner";
+  exp.addEventListener("click", (e) => {
+    e.stopPropagation();
+    exportViewerHtml(d);
+  });
 
   let leaveTimer = null,
     graceUntil = 0;

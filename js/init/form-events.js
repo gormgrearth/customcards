@@ -8,6 +8,7 @@ import { applyTheme, drawCurrent, fresh, read, save } from "../card/form.js";
 import { setArtAdjust, syncArtLabels } from "../card/art.js";
 import { renderLibrary } from "../library/library.js";
 import { exportBackCard, exportCard, exportToken } from "../library/export.js";
+import { exportViewerHtml } from "../library/viewer-export.js";
 
 $("npcTheme").addEventListener("change", applyTheme);
 
@@ -70,3 +71,5 @@ $("exportCurrent").onclick = () => exportCard(read());
 $("exportBackCurrent").onclick = () => exportBackCard(read());
 
 $("exportTokenCurrent").onclick = () => exportToken(read());
+
+$("exportViewerCurrent").onclick = () => exportViewerHtml(read());

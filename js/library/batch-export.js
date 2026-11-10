@@ -2,19 +2,24 @@
 import { slug } from "../core/utils.js";
 import { cardBlob, download, tokenBlob } from "./export.js";
 import { makeZip } from "./zip.js";
+import { viewerBlob } from "./viewer-export.js";
 
 const pause = (ms) => new Promise((r) => setTimeout(r, ms));
 
+/** Nombre de fichiers produits par carte pour ces formats. */
+export const filesPerCard = (fmt) =>
+  +!!fmt.card + +!!fmt.cfd + +!!fmt.tkn + (fmt.html ? Math.max(1, +!!fmt.card + +!!fmt.cfd) : 0);
+
 /**
  * @param cards  cartes à exporter
- * @param fmt    { card, cfd, tkn, zip, folders }
+ * @param fmt    { card, cfd, tkn, html, zip, folders }  (html : carte 3D interactive ; suit « carte » / « carte confidentielle »)
  * @param onProgress (fait, total) => void
  * @returns nombre de fichiers produits
  */
 export async function exportSelection(cards, fmt, onProgress = () => {}) {
   const used = new Map(),
     files = [],
-    total = cards.length * (+!!fmt.card + +!!fmt.cfd + +!!fmt.tkn);
+    total = cards.length * filesPerCard(fmt);
   let n = 0;
   for (const d of cards) {
     // dossiers de la bibliothèque reproduits dans le ZIP (facultatif)
@@ -34,6 +39,10 @@ export async function exportSelection(cards, fmt, onProgress = () => {}) {
     if (fmt.card) await add("", "jpg", () => cardBlob(d, false));
     if (fmt.cfd) await add("-cfd", "jpg", () => cardBlob(d, true));
     if (fmt.tkn) await add("-tkn", "png", () => tokenBlob(d));
+    if (fmt.html) {
+      if (fmt.card || !fmt.cfd) await add("-3d", "html", () => viewerBlob(d, false));
+      if (fmt.cfd) await add("-cfd-3d", "html", () => viewerBlob(d, true));
+    }
   }
   if (fmt.zip) {
     const entries = [];

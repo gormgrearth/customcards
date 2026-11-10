@@ -118,11 +118,20 @@
   background: radial-gradient(#000a, transparent 70%);
   pointer-events: none;
 }
+.v-export {
+  position: absolute;
+  left: 50%;
+  bottom: 0;
+  transform: translateX(-50%);
+  padding: 4px 12px;
+  font-size: 12px;
+  white-space: nowrap;
+}
 .v-hint {
   position: absolute;
   left: 0;
   right: 0;
-  bottom: 0;
+  bottom: 26px;
   font-size: 12px;
   text-align: center;
   color: #c9d3e3;

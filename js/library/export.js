@@ -5,7 +5,7 @@ import { state } from "../core/state.js";
 import { getImg, setStatus, slug } from "../core/utils.js";
 import { draw } from "../card/render.js";
 import { drawBackFace } from "../card/back-render.js";
-import { TOKEN_SIZE, drawToken, tokenImageOf } from "../token/render.js";
+import { TOKEN_SIZE, drawToken, negativeBW, tokenImageOf } from "../token/render.js";
 
 const toBlob = (cv, type, q) => new Promise((res) => cv.toBlob(res, type, q));
 
@@ -21,8 +21,8 @@ export function download(blob, name) {
   setTimeout(() => URL.revokeObjectURL(url), 10000);
 }
 
-/** Carte en JPG ; `confidential` force la version confidentielle ou complète (défaut : réglage général). */
-export async function cardBlob(d, confidential = state.confidentialMode) {
+/** Recto de la carte sur un canvas ; `confidential` force la version confidentielle ou complète (défaut : réglage général). */
+export async function cardCanvas(d, confidential = state.confidentialMode) {
   const c = document.createElement("canvas");
   c.width = W;
   c.height = H;
@@ -34,16 +34,27 @@ export async function cardBlob(d, confidential = state.confidentialMode) {
   } finally {
     state.confidentialMode = prev;
   }
-  return toBlob(c, "image/jpeg", 0.94);
+  return c;
+}
+
+/** Token sur un canvas ; `back` = verso de la pièce (illustration en noir et blanc, inversée). */
+export async function tokenCanvas(d, back = false) {
+  const c = document.createElement("canvas");
+  c.width = TOKEN_SIZE;
+  c.height = TOKEN_SIZE;
+  const img = await tokenImageOf(d);
+  drawToken(c.getContext("2d"), d, back ? negativeBW(img) : img);
+  return c;
+}
+
+/** Carte en JPG. */
+export async function cardBlob(d, confidential = state.confidentialMode) {
+  return toBlob(await cardCanvas(d, confidential), "image/jpeg", 0.94);
 }
 
 /** Token en PNG (fond transparent). */
 export async function tokenBlob(d) {
-  const c = document.createElement("canvas");
-  c.width = TOKEN_SIZE;
-  c.height = TOKEN_SIZE;
-  drawToken(c.getContext("2d"), d, await tokenImageOf(d));
-  return toBlob(c, "image/png");
+  return toBlob(await tokenCanvas(d), "image/png");
 }
 
 export async function exportCard(d) {

@@ -13,6 +13,7 @@ import {
 } from "./folders.js";
 import { copyVisualProps, pasteVisualProps } from "./props-clipboard.js";
 import { exportCard, exportToken } from "./export.js";
+import { exportViewerHtml } from "./viewer-export.js";
 import { refreshSelection, toggleSelected } from "./selection.js";
 import { cancelDwell, openViewer, scheduleViewer } from "./card-viewer.js";
 
@@ -163,6 +164,7 @@ export async function renderLibrary() {
       copyBtn,
       b("⇩", "Exporter en JPG", () => exportCard(d)),
       b("◉", "Exporter le token en PNG", () => exportToken(d)),
+      b("◈", "Exporter la carte 3D interactive (HTML)", () => exportViewerHtml(d)),
       pasteBtn,
       b(
         "×",

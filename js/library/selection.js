@@ -3,13 +3,14 @@ import { $ } from "../core/dom.js";
 import { state } from "../core/state.js";
 import { setStatus } from "../core/utils.js";
 import { cardVisible } from "./folders.js";
-import { exportSelection } from "./batch-export.js";
+import { exportSelection, filesPerCard } from "./batch-export.js";
 import { isViewerOpen } from "./card-viewer.js";
 
 const FMT = () => ({
   card: $("fmtCard").checked,
   cfd: $("fmtCfd").checked,
   tkn: $("fmtTkn").checked,
+  html: $("fmtHtml").checked,
   zip: $("fmtZip").checked,
   folders: $("fmtFolders").checked,
 });
@@ -43,7 +44,7 @@ export function refreshSelection() {
   });
   const n = state.selectedIds.size,
     f = FMT(),
-    formats = +f.card + +f.cfd + +f.tkn,
+    formats = filesPerCard(f),
     label = n + (n > 1 ? " cartes sélectionnées" : " carte sélectionnée");
   $("selectBar").hidden = n === 0;
   $("multiEditBanner").hidden = n === 0;
@@ -71,7 +72,7 @@ document.addEventListener("keydown", (e) => {
   if (e.key === "Escape" && !isViewerOpen() && state.selectedIds.size) clearSelection();
 });
 
-["fmtCard", "fmtCfd", "fmtTkn", "fmtZip", "fmtFolders"].forEach((id) =>
+["fmtCard", "fmtCfd", "fmtTkn", "fmtHtml", "fmtZip", "fmtFolders"].forEach((id) =>
   $(id).addEventListener("change", refreshSelection),
 );
 
@@ -79,8 +80,8 @@ $("selectExport").onclick = async () => {
   const cards = selectedCards(),
     fmt = FMT();
   if (!cards.length) return setStatus("Sélectionnez au moins une carte.");
-  if (!fmt.card && !fmt.cfd && !fmt.tkn)
-    return setStatus("Cochez au moins un format : carte, carte confidentielle ou token.");
+  if (!fmt.card && !fmt.cfd && !fmt.tkn && !fmt.html)
+    return setStatus("Cochez au moins un format : carte, carte confidentielle, token ou carte 3D.");
   const btn = $("selectExport");
   btn.disabled = true;
   try {

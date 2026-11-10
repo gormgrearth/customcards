@@ -315,7 +315,9 @@
           <div class="btnrow" style="justify-content: center; margin-top: 0">
             <button class="primary" id="exportCurrent">
               Exporter le recto en JPG</button
-            ><button id="exportBackCurrent">Exporter le verso en JPG</button>
+            ><button id="exportBackCurrent">Exporter le verso en JPG</button
+            ><button id="exportViewerCurrent" type="button">
+              Exporter la carte 3D (HTML)</button>
           </div>
         </div>
         <div class="panel" style="margin-top: 20px">
@@ -417,6 +419,10 @@
               <label
                 ><input type="checkbox" id="fmtTkn" /> Token
                 <small>(-tkn)</small></label
+              >
+              <label
+                ><input type="checkbox" id="fmtHtml" /> Carte 3D interactive
+                <small>(-3d.html)</small></label
               >
             </fieldset>
             <label
