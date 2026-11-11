@@ -1,0 +1,47 @@
+/* Fenêtre « Exporter pour Discord » */
+.discord-grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 16px 22px;
+  align-items: flex-start;
+  margin: 12px 0;
+}
+.discord-preview {
+  flex: 0 0 240px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  align-items: center;
+}
+.discord-preview canvas {
+  width: 240px;
+  height: auto;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  /* damier : montre la transparence */
+  background: conic-gradient(#171d27 25%, #10151d 0 50%, #171d27 0 75%, #10151d 0) 0 0 / 16px 16px;
+}
+.discord-opts {
+  flex: 1 1 260px;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
+  gap: 10px 14px;
+}
+.discord-opts label {
+  margin: 0;
+}
+.discord-opts label.chk {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--ink);
+  cursor: pointer;
+}
+.discord-opts label.chk input {
+  width: auto;
+  margin: 0;
+}
+#dcStatus {
+  flex: 1 1 100%;
+  margin: 6px 0 0;
+}

@@ -122,10 +122,13 @@
   position: absolute;
   left: 50%;
   bottom: 0;
-  transform: translateX(-50%);
+  transform: translateX(-104%);
   padding: 4px 12px;
   font-size: 12px;
   white-space: nowrap;
+}
+.v-export.v-discord {
+  transform: translateX(4%);
 }
 .v-hint {
   position: absolute;

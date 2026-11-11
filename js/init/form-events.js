@@ -9,6 +9,7 @@ import { setArtAdjust, syncArtLabels } from "../card/art.js";
 import { renderLibrary } from "../library/library.js";
 import { exportBackCard, exportCard, exportToken } from "../library/export.js";
 import { exportViewerHtml } from "../library/viewer-export.js";
+import { openDiscordDialog } from "../library/discord-export.js";
 
 $("npcTheme").addEventListener("change", applyTheme);
 
@@ -73,3 +74,5 @@ $("exportBackCurrent").onclick = () => exportBackCard(read());
 $("exportTokenCurrent").onclick = () => exportToken(read());
 
 $("exportViewerCurrent").onclick = () => exportViewerHtml(read());
+
+$("exportDiscordCurrent").onclick = () => openDiscordDialog(read());

@@ -11,6 +11,7 @@ import { draw } from "../card/render.js";
 import { drawBackFace } from "../card/back-render.js";
 import { TOKEN_SIZE, drawToken, metalRelief, tokenImageOf } from "../token/render.js";
 import { exportViewerHtml } from "./viewer-export.js";
+import { openDiscordDialog } from "./discord-export.js";
 
 export const DWELL_MS = 1500;
 const GAP = 24,
@@ -241,6 +242,14 @@ export async function openViewer(d, anchor) {
   exp.addEventListener("click", (e) => {
     e.stopPropagation();
     exportViewerHtml(d);
+  });
+  const dc = el("button", "v-export v-discord", root);
+  dc.type = "button";
+  dc.textContent = "↻ Pour Discord (GIF / vidéo)";
+  dc.addEventListener("click", (e) => {
+    e.stopPropagation();
+    closeViewer();
+    openDiscordDialog(d);
   });
 
   let leaveTimer = null,

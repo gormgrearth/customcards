@@ -17,6 +17,7 @@
     <link rel="stylesheet" href="css/token.css" />
     <link rel="stylesheet" href="css/selection.css" />
     <link rel="stylesheet" href="css/viewer.css" />
+    <link rel="stylesheet" href="css/discord.css" />
     <link rel="stylesheet" href="css/responsive-dialogs.css" />
   </head>
   <body>
@@ -317,7 +318,10 @@
               Exporter le recto en JPG</button
             ><button id="exportBackCurrent">Exporter le verso en JPG</button
             ><button id="exportViewerCurrent" type="button">
-              Exporter la carte 3D (HTML)</button>
+              Exporter la carte 3D (HTML)</button
+            ><button id="exportDiscordCurrent" type="button">
+              Exporter pour Discord…</button
+            >
           </div>
         </div>
         <div class="panel" style="margin-top: 20px">
@@ -459,6 +463,86 @@
         </div>
       </section>
     </main>
+    <dialog id="discordDlg" class="wide">
+      <h2>Exporter pour Discord</h2>
+      <p class="hint">
+        Discord n’affiche pas les pages HTML : la carte qui tourne s’exporte en
+        GIF animé (lecture automatique en boucle) ou en vidéo, à glisser dans
+        un salon.
+      </p>
+      <div class="discord-grid">
+        <div class="discord-preview">
+          <canvas id="discordPreview" aria-label="Aperçu de l’animation"></canvas>
+          <span class="hint">Aperçu</span>
+        </div>
+        <div class="discord-opts">
+          <label
+            >Format
+            <select id="dcFormat">
+              <option value="gif">GIF animé (boucle automatique)</option>
+              <option value="video">Vidéo (MP4 si possible, sinon WebM)</option>
+            </select></label
+          >
+          <label
+            >Taille
+            <select id="dcSize">
+              <option value="300">Légère (300 px)</option>
+              <option value="400" selected>Standard (400 px)</option>
+              <option value="520">Grande (520 px)</option>
+            </select></label
+          >
+          <label
+            >Mouvement
+            <select id="dcMotion">
+              <option value="spin">Tour complet (recto, verso)</option>
+              <option value="sway">Balancier (recto seulement)</option>
+            </select></label
+          >
+          <label
+            >Durée d’un cycle
+            <select id="dcDuration">
+              <option value="2">2 s</option>
+              <option value="3" selected>3 s</option>
+              <option value="4">4 s</option>
+              <option value="6">6 s</option>
+            </select></label
+          >
+          <label
+            >Fond
+            <select id="dcBg">
+              <option value="dark">Sombre</option>
+              <option value="light">Clair</option>
+              <option value="transparent">Transparent (GIF)</option>
+            </select></label
+          >
+          <label
+            >Limite de poids (GIF)
+            <select id="dcLimit">
+              <option value="10" selected>10 Mo (sans Nitro)</option>
+              <option value="50">50 Mo (Nitro Basic)</option>
+              <option value="0">Aucune</option>
+            </select></label
+          >
+          <label class="chk"
+            ><input type="checkbox" id="dcShadow" checked /> Ombre</label
+          >
+          <label class="chk"
+            ><input type="checkbox" id="dcGlare" checked /> Reflet</label
+          >
+          <label class="chk"
+            ><input type="checkbox" id="dcCfd" /> Version confidentielle
+            <small>(-cfd)</small></label
+          >
+        </div>
+      </div>
+      <div class="row">
+        <button class="primary" id="dcGo" type="button">
+          Générer et télécharger
+        </button>
+        <button type="button" data-close>Fermer</button>
+        <span class="hint" id="dcStatus" aria-live="polite"></span>
+      </div>
+    </dialog>
     <dialog id="tokenRingDlg" class="wide">
       <h2>Bibliothèque d’anneaux</h2>
       <p class="hint">

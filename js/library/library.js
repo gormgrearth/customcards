@@ -14,6 +14,7 @@ import {
 import { copyVisualProps, pasteVisualProps } from "./props-clipboard.js";
 import { exportCard, exportToken } from "./export.js";
 import { exportViewerHtml } from "./viewer-export.js";
+import { openDiscordDialog } from "./discord-export.js";
 import { refreshSelection, toggleSelected } from "./selection.js";
 import { cancelDwell, openViewer, scheduleViewer } from "./card-viewer.js";
 
@@ -165,6 +166,7 @@ export async function renderLibrary() {
       b("⇩", "Exporter en JPG", () => exportCard(d)),
       b("◉", "Exporter le token en PNG", () => exportToken(d)),
       b("◈", "Exporter la carte 3D interactive (HTML)", () => exportViewerHtml(d)),
+      b("↻", "Exporter pour Discord : carte qui tourne (GIF ou vidéo)", () => openDiscordDialog(d)),
       pasteBtn,
       b(
         "×",
