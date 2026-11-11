@@ -3,7 +3,7 @@ import { $ } from "../core/dom.js";
 import { state } from "../core/state.js";
 import { BACK_STYLES } from "../backs/index.js";
 import { kv } from "../core/storage.js";
-import { loadImage } from "../core/utils.js";
+import { loadImage, setStatus } from "../core/utils.js";
 import { syncSelection } from "../library/multi-edit.js";
 
 const backStyleSelect = $("backStyle");
@@ -38,6 +38,51 @@ export const backName = (data) =>
   state.customBacks.find((x) => x.data === data)?.name ||
   "Verso personnalisé";
 
+const saveCustomBacks = () =>
+  kv("readwrite", (s) => s.put(state.customBacks, "customBacks")).catch(() => {});
+
+/** Renomme un verso importé de la bibliothèque (le nom est unique, sans tenir compte de la casse). */
+async function renameBack(item, input) {
+  const name = input.value.trim().slice(0, 50);
+  if (!name || name === item.name) return renderBackLibrary();
+  if (state.customBacks.some((b) => b !== item && b.name.toLowerCase() === name.toLowerCase())) {
+    setStatus("Un verso porte déjà ce nom : choisissez-en un autre.");
+    return renderBackLibrary();
+  }
+  item.name = name;
+  await saveCustomBacks();
+  if (state.backArtData === item.data) $("backStatus").textContent = "Verso sélectionné : " + name;
+  renderBackLibrary();
+  setStatus("Verso renommé : " + name);
+}
+
+/** Remplace le nom affiché par un champ de saisie (Entrée / clic ailleurs : valider, Échap : annuler). */
+function startRename(item, nameRow) {
+  const input = document.createElement("input");
+  input.type = "text";
+  input.className = "tile-name-input";
+  input.maxLength = 50;
+  input.value = item.name;
+  input.setAttribute("aria-label", "Nouveau nom du verso « " + item.name + " »");
+  let done = false;
+  const finish = (ok) => {
+    if (done) return;
+    done = true;
+    if (ok) renameBack(item, input);
+    else renderBackLibrary();
+  };
+  input.addEventListener("click", (e) => e.stopPropagation());
+  input.addEventListener("keydown", (e) => {
+    e.stopPropagation();
+    if (e.key === "Enter") finish(true);
+    else if (e.key === "Escape") finish(false);
+  });
+  input.addEventListener("blur", () => finish(true));
+  nameRow.replaceChildren(input);
+  input.focus();
+  input.select();
+}
+
 export function setBackArt(data, label) {
   state.backArtData = data || null;
   $("backStatus").textContent = state.backArtData
@@ -67,7 +112,25 @@ export function renderBackLibrary() {
     im.alt = item.name;
     const name = document.createElement("div");
     name.className = "tile-name";
-    name.textContent = item.name;
+    const label = document.createElement("span");
+    label.textContent = item.name;
+    name.appendChild(label);
+    if (state.backLibraryMode === "custom") {
+      // seuls les versos importés se renomment (les styles proposés ont un nom fixe)
+      const rn = document.createElement("button");
+      rn.type = "button";
+      rn.className = "tile-rename";
+      rn.textContent = "✎";
+      rn.title = "Renommer ce verso";
+      rn.setAttribute("aria-label", "Renommer le verso " + item.name);
+      rn.onclick = (e) => {
+        e.stopPropagation();
+        startRename(item, name);
+      };
+      name.appendChild(rn);
+      label.title = "Double-clic pour renommer";
+      label.addEventListener("dblclick", () => startRename(item, name));
+    }
     const use = document.createElement("button");
     use.textContent = "Utiliser ce verso";
     use.onclick = () => {

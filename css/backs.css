@@ -42,6 +42,27 @@
   font-size: 12px;
   padding: 6px;
 }
+.back-tile .tile-name {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  margin-top: 5px;
+  word-break: break-word;
+}
+.back-tile .tile-rename {
+  flex: 0 0 auto;
+  width: auto;
+  margin: 0;
+  padding: 2px 7px;
+  font-size: 12px;
+}
+.back-tile .tile-name-input {
+  width: 100%;
+  margin: 0;
+  padding: 4px 6px;
+  font-size: 12px;
+}
 .back-empty {
   grid-column: 1/-1;
   padding: 18px;
